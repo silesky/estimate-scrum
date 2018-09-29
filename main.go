@@ -14,10 +14,6 @@ var clients = make(map[*websocket.Conn]bool)
 var broadcast = make(chan models.Message)
 var upgrader = websocket.Upgrader{}
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hi! there, I love %s!", r.URL.Path[1:])
-}
-
 func main() {
 	handler := http.FileServer(http.Dir("./client"))
 	http.Handle("/", handler)
