@@ -11,7 +11,7 @@ import (
 
 // globals
 var clients = make(map[*websocket.Conn]bool)
-var broadcast = make(chan models.Message)
+var broadcast = make(chan models.Estimation)
 var upgrader = websocket.Upgrader{}
 
 func main() {
