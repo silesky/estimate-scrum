@@ -1,6 +1,7 @@
 package main
 
 import (
+	"estimate/models"
 	"fmt"
 	"log"
 	"net/http"
@@ -8,13 +9,18 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var clients = make(map[*websocket.Conn]bool) //
+// globals
+var clients = make(map[*websocket.Conn]bool)
+var broadcast = make(chan models.Message)
+var upgrader = websocket.Upgrader{}
+
 func handler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hi! there, I love %s!", r.URL.Path[1:])
 }
 
 func main() {
-	http.HandleFunc("/", handler)
-	fmt.Println("Listing on 8080.")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	handler := http.FileServer(http.Dir("./client"))
+	http.Handle("/", handler)
+	fmt.Println("Listing on 3333.")
+	log.Fatal(http.ListenAndServe(":3333", nil))
 }
