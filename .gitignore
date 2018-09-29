@@ -29,4 +29,6 @@ coverage.out
 coverage-all.out
 server
 
-# vendor
+# tmp
+**/*tmp*
+**/*tmp*/**/*
