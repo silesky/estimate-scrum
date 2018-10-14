@@ -58,11 +58,15 @@ func handleEstimations() {
 		}
 	}
 }
+
 func main() {
 	handler := http.FileServer(http.Dir("./client"))
 	http.Handle("/", handler)
 	http.HandleFunc("/ws", handleConnections)
 	go handleEstimations()
+	// a := &Router{
+	// 	UserHandler: new(UserHandler),
+	// }
 	fmt.Println("Listing on 3333.")
-	log.Fatal(http.ListenAndServe(":3333", nil))
+	log.Fatal(http.ListenAndServe(":3333", a))
 }
