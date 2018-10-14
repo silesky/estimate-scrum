@@ -8,5 +8,5 @@ import (
 
 func TestRouter(t *testing.T) {
 	var r = createRoutes()
-	assert.Equal(t, Routes.routeExists(r, "/foo"), true)
+	assert.Equal(t, Routes.routeExists(r, "api/foo"), true)
 }

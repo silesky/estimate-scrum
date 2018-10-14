@@ -1,7 +1,6 @@
 package router
 
 import (
-	"fmt"
 	"net/http"
 	"path"
 	"strings"
@@ -37,15 +36,39 @@ type IRoutes interface {
 	createRoutes()
 }
 
-// Routes ...
-type Routes struct {
-	paths []string
+// Route ...
+type Route struct {
+	method string // GET or POST
+	path   string
 }
 
+// Routes ...
+type Routes struct {
+	routes []Route
+}
+
+// DataResponse ...
+type DataResponse struct {
+	name     string
+	greeting string
+}
+
+func (r Routes) getResponse(route Route) DataResponse {
+	var res DataResponse
+	if route.path == "api/foo" {
+		res = DataResponse{
+			name:     "Foo",
+			greeting: "How are you?",
+		}
+	}
+	return res
+}
+
+// routeExists ...
 func (r Routes) routeExists(match string) bool {
 	var res = false
-	for _, v := range r.paths {
-		if v == match {
+	for _, v := range r.routes {
+		if v.path == match {
 			res = true
 		}
 	}
@@ -54,14 +77,10 @@ func (r Routes) routeExists(match string) bool {
 
 func createRoutes() Routes {
 	r := Routes{}
-	r.paths = []string{
-		"api/foo",
-		"api/bar",
-		"api/baz",
+	r.routes = []Route{
+		{path: "api/foo", method: "GET"},
+		{path: "api/bar", method: "GET"},
+		{path: "api/baz", method: "GET"},
 	}
 	return r
-}
-
-func initMe(i IRoutes) {
-	fmt.Println(i.routeExists("foo"))
 }
