@@ -6,6 +6,31 @@ import (
 	"strings"
 )
 
+// IRouter ...
+type IRoutes interface {
+	routeExists(string) bool
+	createRoutes()
+}
+
+// Routes ...
+type MyRouter struct {
+	routes []Route
+}
+
+type UserHandler struct{}
+
+// Route ...
+type Route struct {
+	method string // GET or POST
+	path   string
+}
+
+// DataResponse ...
+type DataResponse struct {
+	name     string
+	greeting string
+}
+
 // ShiftPath splits off the first component of p, which will be cleaned of
 // relative components before processing. head will never contain a slash and
 // tail will always be a rooted path without trailing slash.
@@ -18,42 +43,7 @@ func ShiftPath(p string) (head, tail string) {
 	return p[1:i], p[i:]
 }
 
-// ServeHTTP ...
-func ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	var p = req.URL.Path
-	// var method = req.Method
-	// var Body = req.Body
-	// search through list, if request matches that list, make res
-	if p == "/foo" {
-		println("found!")
-	}
-	http.Error(res, "Not Found", http.StatusNotFound)
-}
-
-// IRoutes ...
-type IRoutes interface {
-	routeExists(string) bool
-	createRoutes()
-}
-
-// Route ...
-type Route struct {
-	method string // GET or POST
-	path   string
-}
-
-// Routes ...
-type Routes struct {
-	routes []Route
-}
-
-// DataResponse ...
-type DataResponse struct {
-	name     string
-	greeting string
-}
-
-func (r Routes) getResponse(route Route) DataResponse {
+func (r MyRouter) getResponse(route Route) DataResponse {
 	var res DataResponse
 	if route.path == "api/foo" {
 		res = DataResponse{
@@ -65,7 +55,7 @@ func (r Routes) getResponse(route Route) DataResponse {
 }
 
 // routeExists ...
-func (r Routes) routeExists(match string) bool {
+func (r MyRouter) routeExists(match string) bool {
 	var res = false
 	for _, v := range r.routes {
 		if v.path == match {
@@ -75,12 +65,29 @@ func (r Routes) routeExists(match string) bool {
 	return res
 }
 
-func createRoutes() Routes {
-	r := Routes{}
+// CreateMyRouter
+func CreateMyRouter() MyRouter {
+	r := MyRouter{}
 	r.routes = []Route{
 		{path: "api/foo", method: "GET"},
 		{path: "api/bar", method: "GET"},
 		{path: "api/baz", method: "GET"},
 	}
 	return r
+}
+
+func (r MyRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	var p = req.URL.Path
+	// var method = req.Method
+	// var Body = req.Body
+	// search through list, if request matches that list, make res
+	if p == "/foo" {
+		println("found!")
+	}
+	http.Error(res, "Not Found", http.StatusNotFound)
+
+}
+
+func (r MyRouter) handleRequest(res http.ResponseWriter, req *http.Request) {
+	r.ServeHTTP(res, req)
 }

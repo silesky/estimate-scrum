@@ -7,6 +7,7 @@ import (
 
 // Estimation represents Estimation record
 type Estimation struct {
+	Session  string `json:"sessionID"`
 	Username string `json:"username"`
 	Estimate int    `json:"estimate"`
 }
@@ -14,6 +15,7 @@ type Estimation struct {
 // Validate validates the Artist fields.
 func (m Estimation) Validate() error {
 	return validation.ValidateStruct(&m,
+		validation.Field(&m.Session, validation.Required, is.UUID),
 		validation.Field(&m.Username, validation.Required, validation.Length(0, 120)),
 		validation.Field(&m.Estimate, validation.Required, is.Digit),
 	)

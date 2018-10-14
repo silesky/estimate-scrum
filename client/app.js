@@ -6,16 +6,16 @@ const USERNAME = 'username';
 const ESTIMATION = 'estimation';
 const SUBMIT = 'submit';
 const DISPLAY_AREA = 'display';
-
+const SESSION_ID = window.location.pathname.split("/")[1]
 const getValue = prop => document.getElementById(prop).value;
 
 // utils
 const renderMessage = msg =>
   `<div class="message">${msg.username} -> ${msg.estimate}</div>`;
 
-const createMessage = (username, estimate) => {
+const createMessage = (username, estimate, sessionID) => {
   const est = typeof estimate === 'string' ? parseInt(estimate, 10) : estimate;
-  return JSON.stringify({ username, estimate: est });
+  return JSON.stringify({ username, estimate: est, sessionID });
 };
 
 // globals
@@ -37,7 +37,7 @@ socket.addEventListener('message', function(event) {
 });
 
 document.getElementById(SUBMIT).addEventListener('click', () => {
-  const msg = createMessage(getValue(USERNAME), getValue(ESTIMATION));
+  const msg = createMessage(getValue(USERNAME), getValue(ESTIMATION), SESSION_ID);
   console.log('msg submitted:', msg);
   socket.send(msg);
 });

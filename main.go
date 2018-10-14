@@ -61,12 +61,10 @@ func handleEstimations() {
 
 func main() {
 	handler := http.FileServer(http.Dir("./client"))
-	http.Handle("/", handler)
-	http.HandleFunc("/ws", handleConnections)
+	// https://rickyanto.com/understanding-go-standard-http-libraries-servemux-handler-handle-and-handlefunc/
+	http.Handle("/", handler)                 // handler is an instance of a ServeMux struct, not a fn.
+	http.HandleFunc("/ws", handleConnections) // this is our normal fn
 	go handleEstimations()
-	// a := &Router{
-	// 	UserHandler: new(UserHandler),
-	// }
 	fmt.Println("Listing on 3333.")
-	log.Fatal(http.ListenAndServe(":3333", a))
+	log.Fatal(http.ListenAndServe(":3333", nil))
 }
