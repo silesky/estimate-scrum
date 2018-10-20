@@ -28,6 +28,7 @@ socket.addEventListener('open', function() {
   console.log('Websocket opened @ ' + WS_URL);
 });
 
+// user entering an estimation.
 socket.addEventListener('message', function(event) {
   const data = JSON.parse(event.data);
   messages.push(data);
@@ -36,6 +37,7 @@ socket.addEventListener('message', function(event) {
   console.log('Message from server ', event.data);
 });
 
+// user submitting an estimation.
 document.getElementById(SUBMIT).addEventListener('click', () => {
   const msg = createMessage(getValue(USERNAME), getValue(ESTIMATION), SESSION_ID);
   console.log('msg submitted:', msg);
