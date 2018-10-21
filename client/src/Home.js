@@ -1,9 +1,11 @@
 import React from 'react';
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router-dom';
 const CreateSessionBtn = ({ ...props }) => (
-  <Link className="new-session" to="/Poker" {...props}>
-    Create Session
-  </Link>
+  <span {...props}>
+    <Link className="new-session" to="/Poker">
+      Create Session
+    </Link>
+  </span>
 );
 
 export default class extends React.Component {
