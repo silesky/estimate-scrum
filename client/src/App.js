@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import logo from './logo.svg';
 import './App.css';
 
 const createWebSocketConnection = onMessageCb => {
@@ -21,33 +20,47 @@ const createMessage = (username, estimate, sessionID = 123) => {
   return JSON.stringify({ username, estimate: est, sessionID });
 };
 class App extends Component {
-  socket = createWebSocketConnection(this.updateEstimations);
   state = {
     user: '',
     estimations: [],
   };
 
+  socket = createWebSocketConnection(this.updateEstimations);
   updateEstimations = (username, estimate) => {
+    // callback
     this.setState({
       estimations: [...this.state.estimations, { username, estimate }],
     });
   };
 
   submitEstimation = estimate => {
+    console.log(this.socket.readyState)
     this.socket.send(this.state.user, estimate);
   };
+
+  setUser = username => this.setState({ user: username });
+
   render() {
     return (
       <div className="App">
         <h1>Scrum Poker</h1>
         <div>
           <label htmlFor="username">Username</label>
-          <input type="string" id="username" />
+          <input
+            type="string"
+            onClick={event => this.setUser(event.target.value)}
+            id="username"
+          />
         </div>
         <div>
           <label htmlFor="estimation">Estimation</label>
           <input type="number" id="estimation" />
-          <button id="submit">Submit</button>
+          <button
+            id="submit"
+            onClick={event => this.submitEstimation(event.target.value)}
+          >
+            Submit
+          </button>
         </div>
       </div>
     );
