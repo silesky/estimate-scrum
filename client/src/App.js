@@ -10,37 +10,54 @@ const createWebSocketConnection = onMessageCb => {
   socket.addEventListener('message', function(event) {
     const data = JSON.parse(event.data);
     console.log('Message from server ', data);
-    onMessageCb(data.username, data.estimate);
+    onMessageCb(data.username, data.estimate, data.sessionID);
   });
   return socket;
 };
 
-const createMessage = (username, estimate, sessionID = 123) => {
+const Estimate = ({ name, estimate }) => <h4>{`${name}: ${estimate}`}</h4>;
+
+const createMessage = (username, estimate, sessionID = 'abc123') => {
   const est = typeof estimate === 'string' ? parseInt(estimate, 10) : estimate;
+  // got some unexpected
   return JSON.stringify({ username, estimate: est, sessionID });
 };
-class App extends Component {
-  state = {
-    user: '',
-    estimations: [],
-  };
 
-  socket = createWebSocketConnection(this.updateEstimations);
-  updateEstimations = (username, estimate) => {
+class App extends Component {
+  constructor() {
+    super();
+    this.state = {
+      currentUser: '',
+      currentEstimate: null,
+      estimations: [],
+    };
+    this.updateEstimations = this.updateEstimations.bind(this);
+    this.socket = createWebSocketConnection(this.updateEstimations);
+  }
+
+  // instance property
+  updateEstimations(username, estimate) {
     // callback
     this.setState({
       estimations: [...this.state.estimations, { username, estimate }],
     });
+  }
+
+  submitEstimation = () => {
+    console.log(this.socket.readyState);
+    const newEstimation = createMessage(
+      this.state.currentUser,
+      this.state.currentEstimate,
+    );
+    console.log('new estimation being sent:', newEstimation, this.state);
+    this.socket.send(newEstimation);
   };
 
-  submitEstimation = estimate => {
-    console.log(this.socket.readyState)
-    this.socket.send(this.state.user, estimate);
-  };
-
-  setUser = username => this.setState({ user: username });
+  setUser = currentUser => this.setState({ currentUser });
+  setEstimate = currentEstimate => this.setState({ currentEstimate })
 
   render() {
+    console.log(this.state);
     return (
       <div className="App">
         <h1>Scrum Poker</h1>
@@ -48,19 +65,23 @@ class App extends Component {
           <label htmlFor="username">Username</label>
           <input
             type="string"
-            onClick={event => this.setUser(event.target.value)}
+            onChange={event => this.setUser(event.target.value)}
             id="username"
           />
         </div>
         <div>
           <label htmlFor="estimation">Estimation</label>
-          <input type="number" id="estimation" />
-          <button
-            id="submit"
-            onClick={event => this.submitEstimation(event.target.value)}
-          >
+          <input onChange={event => this.setEstimate(event.target.value)} type="number" id="estimation" />
+          <button id="submit" onClick={this.submitEstimation}>
             Submit
           </button>
+          {this.state.estimations.map(el => (
+            <Estimate
+              name={el.username}
+              estimate={el.estimate}
+              key={`${Math.random()}${el.name}${el.estimate}`}
+            />
+          ))}
         </div>
       </div>
     );

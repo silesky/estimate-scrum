@@ -32,3 +32,4 @@ server
 # tmp
 **/*tmp*
 **/*tmp*/**/*
+ERRORS.md

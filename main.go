@@ -14,9 +14,15 @@ import (
 var clients = make(map[*websocket.Conn]bool) // create in-memory global map to keep track of client data
 
 var broadcast = make(chan models.Estimation)
-var upgrader = websocket.Upgrader{}
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
 
 func handleConnections(w http.ResponseWriter, r *http.Request) {
+	log.Println(r)
+
 	// upgrade initial GET to a websocket
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
