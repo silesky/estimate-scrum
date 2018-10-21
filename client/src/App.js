@@ -24,24 +24,19 @@ const createMessage = (username, estimate, sessionID = 'abc123') => {
 };
 
 class App extends Component {
-  constructor() {
-    super();
-    this.state = {
-      currentUser: '',
-      currentEstimate: null,
-      estimations: [],
-    };
-    this.updateEstimations = this.updateEstimations.bind(this);
-    this.socket = createWebSocketConnection(this.updateEstimations);
-  }
-
-  // instance property
-  updateEstimations(username, estimate) {
+  state = {
+    currentUser: '',
+    currentEstimate: null,
+    estimations: [],
+  };
+  updateEstimations = (username, estimate) => {
     // callback
     this.setState({
       estimations: [...this.state.estimations, { username, estimate }],
     });
   }
+  socket = createWebSocketConnection(this.updateEstimations)
+
 
   submitEstimation = () => {
     console.log(this.socket.readyState);
