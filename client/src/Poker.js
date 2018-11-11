@@ -55,7 +55,7 @@ export default class extends Component {
     console.log(this.state);
     return (
       <div className="App">
-        <h1>Scrum Poker</h1>
+        <h1>Scrum Poker!</h1>
         <div>
           <label htmlFor="username">Username</label>
           <input
@@ -70,11 +70,11 @@ export default class extends Component {
           <button id="submit" onClick={this.submitEstimation}>
             Submit
           </button>
-          {this.state.estimations.map(el => (
+          {this.state.estimations.map((el, ind) => (
             <Estimate
               name={el.username}
               estimate={el.estimate}
-              key={`${Math.random()}${el.name}${el.estimate}`}
+              key={`${el.name}${el.estimate}${ind}`}
             />
           ))}
         </div>

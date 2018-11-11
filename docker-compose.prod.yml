@@ -5,15 +5,10 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile
-    volumes:
-
-      - ./client:/app
-      # will be using the local version of node_modules
-      - ./client/node_modules:/app/node_modules
     ports:
       - '3000:3000'
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
     restart: always
   redis:
     container_name: estimate-redis

@@ -1,0 +1,27 @@
+version: '3.5'
+services:
+  client:
+    container_name: estimate-client
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    volumes:
+      # Without the data volume ('/app/node_modules'), the node_modules directory would be overwritten by the mounting of the host directory at runtime...
+      # We still install node_modules as part of the dockerfile, because we don't want to couple the client container to a dev environment: should run on it's own.
+      - './app/node_modules'
+      # make it so my client code is mounted into the app
+      # when we do 'docker-compose up', the client directory is mounted into the container, overwriting the node_modules that were just installed when the container was built.
+      - ./client:/app
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=development
+    restart: always
+  redis:
+    container_name: estimate-redis
+    image: 'redis:5.0.1-alpine'
+    ports:
+      - '6379:6379'
+    volumes:
+      - './data:/data'
+    restart: always
