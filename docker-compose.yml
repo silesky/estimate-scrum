@@ -25,8 +25,10 @@ services:
     volumes:
       - './data:/data'
     restart: always
+
+    # Access redis gui on http://localhost:8081/
   redis-commander:
-    container_name: redis-commander
+    container_name: estimate-redis-commander
     hostname: redis-commander
     image: rediscommander/redis-commander:latest
     restart: always
