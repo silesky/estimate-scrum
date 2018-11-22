@@ -33,3 +33,5 @@ server
 **/*tmp*
 **/*tmp*/**/*
 ERRORS.md
+
+*.rdb
