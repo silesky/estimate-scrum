@@ -1,5 +1,5 @@
 # base image
-FROM node:8.12.0
+FROM node:carbon-alpine
 
 # set working directory
 RUN mkdir /app
