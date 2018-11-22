@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -52,7 +54,7 @@ func handleEstimations() {
 	for {
 		// grab the next msg from the broadcast chanell
 		msg := <-broadcast
-		log.Printf("msg", msg)
+		log.Printf("msg: %v", msg)
 		// iterate over each client
 		for client := range clients {
 			err := client.WriteJSON(msg)
@@ -65,11 +67,27 @@ func handleEstimations() {
 	}
 }
 
+func handleCreateNewSession(w http.ResponseWriter, r *http.Request) {
+	// create new uuid in redis, if successful, send response
+	res := models.Session{
+		DateCreated: time.Now().String(),
+		ID:          uuid.New().String(), // public ID will allow others to connect to this session. Will be used as the redis key.
+		AdminID:     uuid.New().String(),
+		IssueTitle:  "",
+		StoryPoints: []int{}, // initialize empty slice
+	}
+	json.NewEncoder(w).Encode(res)
+}
+
 func main() {
 	handler := http.FileServer(http.Dir("./client"))
 	// https://rickyanto.com/understanding-go-standard-http-libraries-servemux-handler-handle-and-handlefunc/
 	http.Handle("/", handler)                 // handler is an instance of a ServeMux struct, not a fn.
 	http.HandleFunc("/ws", handleConnections) // this is our normal fn
+
+	// this should return a session id
+	http.HandleFunc("/new", handleCreateNewSession)
+
 	go handleEstimations()
 	fmt.Println("Listing on 3333.")
 	log.Fatal(http.ListenAndServe(":3333", nil))
