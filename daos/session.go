@@ -34,9 +34,7 @@ func GetDefaultSession() models.Session {
 		DateCreated: time.Now().UTC().String(),
 		ID:          uuid.New().String(), // public ID will allow others to connect to this session. Will be used as the redis key.
 		AdminID:     uuid.New().String(),
-		IssueTitle:  "",
 		StoryPoints: []int{1, 2, 3},
-		Estimations: []models.Estimation{},
 		Issues:      []models.Issue{},
 	}
 }
