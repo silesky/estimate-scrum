@@ -29,7 +29,8 @@ var upgrader = websocket.Upgrader{
 func handleConnections(w http.ResponseWriter, r *http.Request) {
 	log.Println(r)
 
-	sessionID := r.URL.Query().Get("id")
+	sessionID := getQuery(r).sessionID
+
 	fmt.Println(sessionID)
 	// upgrade initial GET to a websocket
 	ws, err := upgrader.Upgrade(w, r, nil)
@@ -105,22 +106,37 @@ func handleCreateNewSession(w http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(w).Encode(session)
 }
 
-func isAdmin(adminID string, session models.Session) bool {
-	return adminID == session.AdminID
+type Query struct {
+	sessionID string
+	adminID   string
+}
+
+func getQuery(req *http.Request) Query {
+	sessionID := req.URL.Query().Get("id")
+	adminID := req.URL.Query().Get("adminID")
+	return Query{
+		sessionID: sessionID,
+		adminID:   adminID,
+	}
+}
+
+func isAdmin(req *http.Request) bool {
+	q := getQuery(req)
+	session, _ := daos.GetSession(q.sessionID)
+	return q.adminID == session.AdminID
 }
 
 // for requesting a specific session
 func handleRequestSession(w http.ResponseWriter, req *http.Request) {
-	sessionID := req.URL.Query().Get("id")
-	adminID := req.URL.Query().Get("adminID")
-	session, err := daos.GetSession(sessionID)
+	q := getQuery(req)
+	session, err := daos.GetSession(q.sessionID)
 	if err != nil {
-		log.Printf(sessionID)
+		log.Printf(q.sessionID)
 		http.Error(w, "No session with that Session ID found.", http.StatusNotFound) // 404
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	response := session.GetSessionResponse(adminID)
+	response := session.GetSessionResponse(q.adminID)
 	fmt.Printf("%+v\n", response)
 	json.NewEncoder(w).Encode(response)
 }
@@ -132,17 +148,17 @@ func parseBodyToSession(r *http.Request) (models.Session, error) {
 }
 
 func handleUpdateSession(w http.ResponseWriter, req *http.Request) {
-	sessionID := req.URL.Query().Get("id")
+	q := getQuery(req)
 	session, err := parseBodyToSession(req)
 	if err != nil {
 		http.Error(w, "Cannot parse req body.", http.StatusInternalServerError) // 404
 		return
 	}
-	updateError := daos.UpdateSession(sessionID, session)
-	if updateError != nil {
+	if !isAdmin(req) {
 		http.Error(w, "Unauthorized user.", http.StatusUnauthorized)
 		return
 	}
+	daos.UpdateSession(q.sessionID, session)
 	// encode struct as json and write to stream
 	w.Header().Set("Content-Type", "application/json")
 	// order is important

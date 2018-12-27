@@ -2,11 +2,12 @@ package models
 
 // session that
 type Session struct {
-	AdminID     string  `json:"adminID,omitempty"`
-	DateCreated string  `json:"dateCreated"`
-	ID          string  `json:"ID"`
-	StoryPoints []int   `json:"storyPoints"`
-	Issues      []Issue `json:"issues"`
+	AdminID       string  `json:"adminID,omitempty"`
+	DateCreated   string  `json:"dateCreated"`
+	ID            string  `json:"ID"`
+	StoryPoints   []int   `json:"storyPoints"`
+	Issues        []Issue `json:"issues"`
+	SelectedIssue string  `json:"selectedIssue"`
 }
 
 type SessionResponse struct {

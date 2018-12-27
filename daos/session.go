@@ -31,17 +31,22 @@ func GetSession(sessionID string) (models.Session, error) {
 // creates empty session
 func GetDefaultSession() models.Session {
 	return models.Session{
-		DateCreated: time.Now().UTC().String(),
-		ID:          uuid.New().String(), // public ID will allow others to connect to this session. Will be used as the redis key.
-		AdminID:     uuid.New().String(),
-		StoryPoints: []int{1, 2, 3},
-		Issues:      []models.Issue{},
+		DateCreated:   time.Now().UTC().String(),
+		ID:            uuid.New().String(), // public ID will allow others to connect to this session. Will be used as the redis key.
+		AdminID:       uuid.New().String(),
+		StoryPoints:   []int{1, 2, 3},
+		Issues:        []models.Issue{},
+		SelectedIssue: "",
 	}
 }
 
 func CreateNewSession() (models.Session, error) {
 	defaultSession := GetDefaultSession()
-	defaultSession.Issues = append(defaultSession.Issues, GetDefaultIssue())
+	defaultIssue := GetDefaultIssue()
+	// add a new initial issue to the list of issues
+	defaultSession.Issues = append(defaultSession.Issues, defaultIssue)
+	// make initial issue the default selected
+	defaultSession.SelectedIssue = defaultIssue.IssueID
 	err := SaveSession(defaultSession.ID, defaultSession)
 	return defaultSession, err
 }
