@@ -69,7 +69,6 @@ export default class extends Component {
 
   wsSubscription = data => {
     // callback
-    console.log('subscriber', data);
     console.assert(data.issueID, 'no issue id found!');
     console.assert(data.username, 'no username found!');
     this.setState({

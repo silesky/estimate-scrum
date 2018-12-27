@@ -21,10 +21,9 @@ type AdminMessage struct {
 	SessionID  string `json:"sessionID"`
 	IssueTitle string `json:"issueTitle"`
 	// Users [] connectedUsers
-	StoryPoints int          `json:"storyPoints,omitempty"` // represents story point values for a giv
-	Estimations []Estimation `json:"estimations"`
-
-	Username string `json:"username"`
-	Estimate int    `json:"estimate"`
-	IssueID  string `json:"issueID"`
+	StoryPoints   int          `json:"storyPoints,omitempty"` // represents story point values for a giv
+	Estimations   []Estimation `json:"estimations"`
+	SelectedIssue string       `json:"SelectedIssue"`
+	FinalPoints   int          `json:"FinalPoints"`
+	IssueID       string       `json:"issueID"`
 }
