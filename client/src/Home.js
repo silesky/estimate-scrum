@@ -3,8 +3,14 @@ import { createNewSession } from './utils';
 
 export default class extends React.Component {
   async onNewSessionClick() {
-    const { ID, adminID } = await createNewSession();
-    window.location.href = `/session?id=${ID}&adminId=${adminID}`;
+    const data = await createNewSession();
+    const { ID, adminID, issues } = data;
+    const firstIssueID = issues[0].issueID;
+    window.location.href =
+      `/session` +
+      `?id=${ID}` +
+      `&adminID=${adminID}` +
+      `&issueID=${firstIssueID}`;
   }
   render() {
     return (

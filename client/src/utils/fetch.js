@@ -16,16 +16,7 @@ const createFetch = (route, method) => {
 
 export const createNewSession = createFetch('/api/session', 'POST')
 
-export const getSession = async (id, adminId) => {
-  const adminStr = adminId ? `adminId=${adminId}` : ''
-  try {
-    const data = await createFetch(`/api/session?id=${id}&${adminStr}`, 'GET')()
-    return {
-      estimations: data.session.estimations || [],
-      issueTitle: data.issueTitle,
-      isAdmin: toBool(data.isAdmin),
-    }
-  } catch(err) {
-      throw err
-  }
+export const getSession = async (id, adminID) => {
+  const adminStr = adminID ? `adminID=${adminID}` : ''
+  return createFetch(`/api/session?id=${id}&${adminStr}`, 'GET')()
 }

@@ -2,8 +2,14 @@ import React, { Component } from 'react';
 import { getSession } from './utils';
 import './App.css';
 
-const createWebSocketConnection = (onMessageCb, { id, adminId }) => {
-  const WS_URL = `ws://localhost:3333/ws?id=${id}&adminId=${adminId}`;
+const mapEstimations = estimations =>
+  Object.keys(estimations).map(u => ({
+    username: u,
+    estimate: estimations[u],
+  }));
+
+const createWebSocketConnection = (onMessageCb, { id, adminID }) => {
+  const WS_URL = `ws://localhost:3333/ws?id=${id}&adminID=${adminID}`;
   const socket = new WebSocket(WS_URL);
   socket.addEventListener('open', function() {
     console.log('Websocket opened @ ', WS_URL);
@@ -11,17 +17,22 @@ const createWebSocketConnection = (onMessageCb, { id, adminId }) => {
   socket.addEventListener('message', function(event) {
     const data = JSON.parse(event.data);
     console.log('Message from server ', data);
-    onMessageCb(data)
+    onMessageCb(data);
   });
   return socket;
 };
 
 const Estimate = ({ name, estimate }) => <h4>{`${name}: ${estimate}`}</h4>;
 
-const createMessage = (username, estimate, sessionID = 'abc123') => {
-  const est = typeof estimate === 'string' ? parseInt(estimate, 10) : estimate;
+const createMessage = (
+  username,
+  estimationValue,
+  sessionID = 'abc123',
+  issueID,
+) => {
+  const est = typeof estimate === 'string' ? parseInt(estimationValue, 10) : 0;
   // got some unexpected
-  return JSON.stringify(  { username, estimate: est, sessionID });
+  return JSON.stringify({ username, estimationValue: est, sessionID, issueID });
 };
 
 const CopyBox = ({ link }) => (
@@ -30,14 +41,18 @@ const CopyBox = ({ link }) => (
   </span>
 );
 
-const AdminControlPanel = ({ isAdmin, setIssueTitle}) => {
+const AdminControlPanel = ({ isAdmin, setIssueTitle }) => {
   if (!isAdmin) return null;
   return (
-  <div id="AdminControlPanel">
-    <h2>ADMIN IS AUTHORIZED</h2>
-     <label htmlFor="issueTitle">New Issue Title</label>
-     <input type="text" id="issueTitle" onChange={e => setIssueTitle(e.target.value)}/>
-  </div>
+    <div id="AdminControlPanel">
+      <h2>ADMIN IS AUTHORIZED</h2>
+      <label htmlFor="issueTitle">New Issue Title</label>
+      <input
+        type="text"
+        id="issueTitle"
+        onChange={e => setIssueTitle(e.target.value)}
+      />
+    </div>
   );
 };
 
@@ -45,21 +60,27 @@ export default class extends Component {
   state = {
     currentUser: '',
     currentEstimate: null,
-    estimations: [],
+    estimations: {},
     isAdmin: false,
     error: false,
-    storyPoints: null, // final story points
     // admin-only for setting
     issueTitle: '',
+    issueID: '',
   };
 
-  wsSubscription = (data) => {
-    const { username, estimate, sessionID, issueTitle, storyPoints } = data
+  wsSubscription = data => {
     // callback
+    console.log('subscriber', data);
+    console.assert(data.issueID, "no issue id found!")
+    console.assert(data.username, "no username found!")
     this.setState({
-      estimations: [...this.state.estimations, { username, estimate }],
-      issueTitle,
-      storyPoints,
+      username: data.username,
+      sessionID: data.sessionID,
+      issueID: data.issueID,
+      estimations: {
+        ...this.state.estimations,
+        [`${data.username}`]: data.estimationValue,
+      },
     });
   };
 
@@ -69,7 +90,8 @@ export default class extends Component {
     const qp = new URLSearchParams(this.props.location.search);
     return {
       id: qp.get('id'),
-      adminId: qp.get('adminId'),
+      adminID: qp.get('adminID'),
+      issueID: qp.get('issueID'),
     };
   }
 
@@ -79,7 +101,7 @@ export default class extends Component {
   }
 
   submitEstimation = () => {
-    const { id: sessionID } = this.getParams();
+    const { id: sessionID, issueID } = this.getParams();
     if (!sessionID) {
       console.error('no session ID found. should be ?id=1234');
       return;
@@ -88,46 +110,54 @@ export default class extends Component {
       this.state.currentUser,
       this.state.currentEstimate,
       sessionID,
+      issueID,
     );
     this.socket.send(newEstimation);
   };
 
   setUser = currentUser => this.setState({ currentUser });
-  setEstimate = currentEstimate => this.setState({ currentEstimate });
-  setEstimations = estimations => this.setState({ estimations });
+  setEstimate = currentEstimate => {
+    const t = typeof currentEstimate;
+    const est = t === 'string' ||  t === 'number' ? parseInt(currentEstimate, 10) : 0;
+    this.setState({ currentEstimate: est });
+  };
   setAdminStatus = isAdmin => this.setState({ isAdmin });
   setError = bool => this.setState({ error: bool });
-  setIssueTitle = issueTitle => this.setState({issueTitle});
+  setIssueTitle = issueTitle => this.setState({ issueTitle });
   // http://localhost:3000/session?id=206f8d29-fa5a-4f0b-9051-6f7b4089967a
   async componentDidMount() {
-    const { id, adminId } = this.getParams();
+    const { id, adminID } = this.getParams();
     // get any
     try {
       // TODO: wait till response comes back that confirms that user is admin or not
-      const {
-        estimations,
+      const data = await getSession(id, adminID);
+      console.log('data from /session', data);
+      const { session, isAdmin } = data;
+      this.setState({
+        session,
         isAdmin,
-      } = await getSession(id, adminId);
-      this.setEstimations(estimations);
-      this.setAdminStatus(isAdmin);
+      });
     } catch (err) {
       console.error(err, '__NO SESSION FOUND__');
-      this.setError(true)
+      this.setError(true);
     }
   }
   render() {
     console.log('state:', this.state, 'props:', this.props);
     if (this.state.error) {
       const { id } = this.getParams();
-      return <h3>{`Oops! No scrum session found with id: ${id}`}</h3>
+      return <h3>{`Oops! No scrum session found with id: ${id}`}</h3>;
     }
 
     return (
       <div className="App">
-        <AdminControlPanel isAdmin={this.state.isAdmin} setIssueTitle={this.setIssueTitle} />
+        <AdminControlPanel
+          isAdmin={this.state.isAdmin}
+          setIssueTitle={this.setIssueTitle}
+        />
         <CopyBox link={this.getNonAdminSessionLink()} />
         <h1>Scrum Session!</h1>
-        {this.state.issueTitle && <h2>{ this.state.issueTitle }</h2>}
+        {this.state.issueTitle && <h2>{this.state.issueTitle}</h2>}
         <div>
           <label htmlFor="username">Username</label>
           <input
@@ -146,7 +176,7 @@ export default class extends Component {
           <button id="submit" onClick={this.submitEstimation}>
             Submit
           </button>
-          {this.state.estimations.map((el, ind) => (
+          {mapEstimations(this.state.estimations).map((el, ind) => (
             <Estimate
               name={el.username}
               estimate={el.estimate}

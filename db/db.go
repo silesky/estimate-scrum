@@ -1,17 +1,30 @@
 package db
 
 import (
+	"estimate/models"
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/garyburd/redigo/redis"
+	"github.com/gorilla/websocket"
 )
 
 // https://github.com/pete911/examples-redigo
 
+type WSUserMap = map[string]map[*websocket.Conn]bool
+
+type Store struct {
+	Users     WSUserMap
+	Broadcast chan models.Estimation
+	sync.Mutex
+}
+
 var (
-	Pool *redis.Pool
+	Pool       *redis.Pool
+	wsStore    *Store
+	pubSubConn *redis.PubSubConn
 )
 
 func Ping() error {
@@ -50,6 +63,10 @@ func newPool(server string) *redis.Pool {
 
 func Init() {
 	redisHost := os.Getenv("REDIS_HOST")
+	wsStore = &Store{
+		Users:     make(WSUserMap),
+		Broadcast: make(chan models.Estimation),
+	}
 	if redisHost == "" {
 		redisHost = ":6379"
 	}

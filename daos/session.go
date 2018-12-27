@@ -41,11 +41,12 @@ func GetDefaultSession() models.Session {
 
 func CreateNewSession() (models.Session, error) {
 	defaultSession := GetDefaultSession()
+	defaultSession.Issues = append(defaultSession.Issues, GetDefaultIssue())
 	err := SaveSession(defaultSession.ID, defaultSession)
 	return defaultSession, err
 }
 
-// if adminId is correct, update session
+// if adminID is correct, update session
 func UpdateSession(sessionID string, newData models.Session) error {
 	session, err := GetSession(sessionID)
 	if err != nil {
@@ -70,11 +71,10 @@ func SaveSession(sessionID string, session models.Session) error {
 }
 
 func GetDefaultIssue() models.Issue {
-	return models.Issue{
-		IssueTitle:  "",
-		IssueID:     uuid.New().String(),
-		Estimations: make(map[string]int),
-	}
+	issue := models.Issue{}
+	issue.IssueID = uuid.New().String()
+	issue.Estimations = make(map[string]int)
+	return issue
 }
 
 func CreateNewIssue(sessionID string) error {
@@ -93,6 +93,8 @@ func getIssueByID(sessionID string, issueID string) (models.Issue, error) {
 	for i := range session.Issues {
 		eachIssue := &session.Issues[i]
 		if eachIssue.IssueID == issueID {
+			fmt.Printf("found issue")
+			fmt.Printf("%+v\n", eachIssue)
 			issue = *eachIssue
 		}
 	}

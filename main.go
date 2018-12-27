@@ -18,7 +18,7 @@ var clients = make(map[*websocket.Conn]bool) // create in-memory global map to k
 // make a map of clients connected to
 var clientSessions = make(map[string]map[*websocket.Conn]bool)
 
-var broadcast = make(chan models.Estimation)
+var broadcast = make(chan models.UserMessageEstimation)
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
@@ -42,7 +42,8 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 	}
 	clientSessions[sessionID][ws] = true
 	for {
-		var msg models.Estimation
+		// add type switches so I can handle both AdminMessages and UserMessages
+		var msg models.UserMessageEstimation
 		err := ws.ReadJSON(&msg)
 		if err != nil {
 			log.Printf("error: %v", err)
@@ -65,14 +66,15 @@ func handleEstimations() {
 		// grab the next msg from the broadcast chanell
 		estimation := <-broadcast
 		sessionID := estimation.SessionID
-		log.Printf("msg: %v", estimation)
-
-		dbSaveError := daos.UpdateEstimations(sessionID, estimation.IssueID, estimation.Username, estimation.Estimate)
+		fmt.Println("new estimation:")
+		fmt.Printf("%+v\n", estimation)
+		dbSaveError := daos.UpdateEstimations(sessionID, estimation.IssueID, estimation.Username, estimation.EstimationValue)
 		if dbSaveError != nil {
 			log.Printf("error: %v", dbSaveError)
 		}
 		// iterate over each client
 		for client := range clientSessions[sessionID] {
+
 			err := client.WriteJSON(estimation)
 			if err != nil {
 				log.Printf("error: %v", err)
@@ -82,19 +84,11 @@ func handleEstimations() {
 		}
 	}
 }
-func createIssue(issueTitle string, issueID string, estimations models.EstimationsMap) models.Issue {
-	return models.Issue{
-		IssueID:     issueID,
-		IssueTitle:  issueTitle,
-		Estimations: estimations,
-	}
-}
 
 // create a new session with /new -- should probably be a POST
 func handleCreateNewSession(w http.ResponseWriter, req *http.Request) {
 	fmt.Println(req)
 	session, err := daos.CreateNewSession()
-	daos.CreateNewIssue(session.ID)
 	fmt.Println(session.ID)
 	if err != nil {
 		log.Printf("%v", err)
@@ -107,6 +101,7 @@ func handleCreateNewSession(w http.ResponseWriter, req *http.Request) {
 	// order is important
 	w.WriteHeader(http.StatusCreated)
 	// serialize the struct as JSON (again)
+	fmt.Println("SESSION!", session)
 	json.NewEncoder(w).Encode(session)
 }
 
@@ -117,7 +112,7 @@ func isAdmin(adminID string, session models.Session) bool {
 // for requesting a specific session
 func handleRequestSession(w http.ResponseWriter, req *http.Request) {
 	sessionID := req.URL.Query().Get("id")
-	adminID := req.URL.Query().Get("adminId")
+	adminID := req.URL.Query().Get("adminID")
 	session, err := daos.GetSession(sessionID)
 	if err != nil {
 		log.Printf(sessionID)
@@ -126,6 +121,7 @@ func handleRequestSession(w http.ResponseWriter, req *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	response := session.GetSessionResponse(adminID)
+	fmt.Printf("%+v\n", response)
 	json.NewEncoder(w).Encode(response)
 }
 
