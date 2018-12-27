@@ -30,9 +30,8 @@ const createMessage = (
   sessionID = 'abc123',
   issueID,
 ) => {
-  const est = typeof estimate === 'string' ? parseInt(estimationValue, 10) : 0;
   // got some unexpected
-  return JSON.stringify({ username, estimationValue: est, sessionID, issueID });
+  return JSON.stringify({ username, estimationValue, sessionID, issueID });
 };
 
 const CopyBox = ({ link }) => (
@@ -71,8 +70,8 @@ export default class extends Component {
   wsSubscription = data => {
     // callback
     console.log('subscriber', data);
-    console.assert(data.issueID, "no issue id found!")
-    console.assert(data.username, "no username found!")
+    console.assert(data.issueID, 'no issue id found!');
+    console.assert(data.username, 'no username found!');
     this.setState({
       username: data.username,
       sessionID: data.sessionID,
@@ -118,7 +117,8 @@ export default class extends Component {
   setUser = currentUser => this.setState({ currentUser });
   setEstimate = currentEstimate => {
     const t = typeof currentEstimate;
-    const est = t === 'string' ||  t === 'number' ? parseInt(currentEstimate, 10) : 0;
+    const est =
+      t === 'string' || t === 'number' ? parseInt(currentEstimate, 10) : 0;
     this.setState({ currentEstimate: est });
   };
   setAdminStatus = isAdmin => this.setState({ isAdmin });

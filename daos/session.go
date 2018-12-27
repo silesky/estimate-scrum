@@ -93,8 +93,6 @@ func getIssueByID(sessionID string, issueID string) (models.Issue, error) {
 	for i := range session.Issues {
 		eachIssue := &session.Issues[i]
 		if eachIssue.IssueID == issueID {
-			fmt.Printf("found issue")
-			fmt.Printf("%+v\n", eachIssue)
 			issue = *eachIssue
 		}
 	}
@@ -105,9 +103,9 @@ func getIssueByID(sessionID string, issueID string) (models.Issue, error) {
 func updateIssue(sessionID string, newIssue models.Issue) error {
 	session, err := GetSession(sessionID)
 	for i := range session.Issues {
-		eachIssue := &session.Issues[i]
-		if eachIssue.IssueID == newIssue.IssueID {
-			eachIssue = &newIssue
+		if session.Issues[i].IssueID == newIssue.IssueID {
+			fmt.Printf("found issue 4 update...")
+			session.Issues[i] = newIssue
 		}
 	}
 	SaveSession(sessionID, session)
