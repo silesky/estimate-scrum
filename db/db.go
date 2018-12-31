@@ -13,6 +13,18 @@ import (
 
 // https://github.com/pete911/examples-redigo
 
+/*
+{
+	[sessionID1]: {
+		[wsConn1]: true,
+		[wsConn2]: true,
+	},
+	[sessionID2] {
+		...
+	}
+*/
+
+// WSUserMap holds all the users. TODO: add 'isAdmin' information
 type WSUserMap = map[string]map[*websocket.Conn]bool
 
 type Store struct {
