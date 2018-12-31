@@ -61,10 +61,20 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 	defer ws.Close()
 }
 
-// broadcasts a message to all the users
-func handleEstimations() {
+func sendDataToClient(sessionID string, data models.SessionResponse) {
+	for client := range clientSessions[sessionID] {
+		err := client.WriteJSON(data)
+		if err != nil {
+			log.Printf("error: %v", err)
+			client.Close()
+			delete(clientSessions[sessionID], client)
+		}
+	}
+}
+
+// looks at the channel and updates the database with any incoming messages.
+func handleIncomingMessages() {
 	for {
-		// grab the next msg from the broadcast chanell
 		estimation := <-broadcast
 		sessionID := estimation.SessionID
 		fmt.Println("new estimation:")
@@ -72,16 +82,6 @@ func handleEstimations() {
 		dbSaveError := daos.UpdateEstimations(sessionID, estimation.IssueID, estimation.Username, estimation.EstimationValue)
 		if dbSaveError != nil {
 			log.Printf("error: %v", dbSaveError)
-		}
-		// iterate over each client
-		for client := range clientSessions[sessionID] {
-
-			err := client.WriteJSON(estimation)
-			if err != nil {
-				log.Printf("error: %v", err)
-				client.Close()
-				delete(clientSessions[sessionID], client)
-			}
 		}
 	}
 }
@@ -119,6 +119,7 @@ func getQuery(req *http.Request) Query {
 		adminID:   adminID,
 	}
 }
+
 func deliverMessages() {
 	log.Println("delivering messages.")
 	for {
@@ -128,6 +129,7 @@ func deliverMessages() {
 			log.Printf("pmessage: %s: %s", v.Channel, v.Data)
 			sessionID := string(v.Data)
 			s, _ := daos.GetSession(sessionID)
+			sendDataToClient(sessionID, s.GetSessionResponse(""))
 			fmt.Printf("%+v\n", s)
 
 		case redis.Message:
@@ -220,13 +222,13 @@ func main() {
 	clientSessions = db.WsStore.Users
 	handler := http.FileServer(http.Dir("./client"))
 	// https://rickyanto.com/understanding-go-standard-http-libraries-servemux-handler-handle-and-handlefunc/
-	http.Handle("/", handler)                 // handler is an instance of a ServeMux struct, not a fn.
-	http.HandleFunc("/ws", handleConnections) // this is our normal fn
-
-	// this should return a session if available, or an error message
+	http.Handle("/", handler)
 	http.HandleFunc("/api/session", handleSession)
-	go handleEstimations()
+
+	http.HandleFunc("/ws", handleConnections)
+	go handleIncomingMessages()
 	go deliverMessages()
+
 	port := ":3333"
 	fmt.Println("Listenining on http://localhost" + port)
 	log.Fatal(http.ListenAndServe(port, nil))
