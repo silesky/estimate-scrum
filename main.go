@@ -13,10 +13,9 @@ import (
 )
 
 // globals
-var clients = make(map[*websocket.Conn]bool) // create in-memory global map to keep track of client data
-
-// make a map of clients connected to
-var clientSessions = make(map[string]map[*websocket.Conn]bool)
+var (
+	clientSessions db.WSUserMap
+)
 
 var broadcast = make(chan models.UserMessageEstimation)
 var upgrader = websocket.Upgrader{
@@ -189,7 +188,9 @@ func handleSession(w http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
+
 	db.Init()
+	clientSessions = db.WsStore.Users
 	handler := http.FileServer(http.Dir("./client"))
 	// https://rickyanto.com/understanding-go-standard-http-libraries-servemux-handler-handle-and-handlefunc/
 	http.Handle("/", handler)                 // handler is an instance of a ServeMux struct, not a fn.

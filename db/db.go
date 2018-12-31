@@ -3,6 +3,7 @@ package db
 import (
 	"estimate/models"
 	"fmt"
+	"log"
 	"os"
 	"sync"
 	"time"
@@ -23,7 +24,7 @@ type Store struct {
 
 var (
 	Pool       *redis.Pool
-	wsStore    *Store
+	WsStore    *Store
 	pubSubConn *redis.PubSubConn
 )
 
@@ -61,9 +62,25 @@ func newPool(server string) *redis.Pool {
 	}
 }
 
+func deliverMessages() {
+	for {
+		switch v := pubSubConn.Receive().(type) {
+		// case redis.Message:
+		// 	Store.findAndDeliver(v.Channel, string(v.Data))
+
+		case redis.Subscription:
+			log.Printf("subscription message: %s: %s %d\n", v.Channel, v.Kind, v.Count)
+
+		case error:
+			log.Println("error pub/sub, delivery has stopped")
+			return
+		}
+	}
+}
+
 func Init() {
 	redisHost := os.Getenv("REDIS_HOST")
-	wsStore = &Store{
+	WsStore = &Store{
 		Users:     make(WSUserMap),
 		Broadcast: make(chan models.Estimation),
 	}
@@ -71,8 +88,29 @@ func Init() {
 		redisHost = ":6379"
 	}
 	Pool = newPool(redisHost)
+	// go deliverMessages()
 	Ping()
 }
+
+/*
+
+func (s *Store) findAndDeliver(userID string, content string) {
+	m := Message{
+		Content: content,
+	}
+	for _, u := range s.Users {
+		if u.ID == userID {
+			if err := u.conn.WriteJSON(m); err != nil {
+				log.Printf("error on message delivery e: %s\n", err)
+			} else {
+				log.Printf("user %s found, message sent\n", userID)
+			}
+			return
+		}
+	}
+	log.Printf("user %s not found at our store\n", userID)
+}
+*/
 
 func Get(key string) ([]byte, error) {
 
