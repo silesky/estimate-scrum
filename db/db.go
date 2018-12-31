@@ -63,17 +63,25 @@ func newPool(server string) *redis.Pool {
 }
 
 func deliverMessages() {
+	log.Println("delivering messages.")
 	for {
+
 		switch v := pubSubConn.Receive().(type) {
-		// case redis.Message:
-		// 	Store.findAndDeliver(v.Channel, string(v.Data))
+		case redis.PMessage:
+			log.Printf("pmessage: %s: %s", v.Channel, v.Data)
+
+		case redis.Message:
+			log.Printf("message: %s: %s", v.Channel, v.Data)
 
 		case redis.Subscription:
-			log.Printf("subscription message: %s: %s %d\n", v.Channel, v.Kind, v.Count)
+			log.Printf("subscription: %s: %s %d\n", v.Channel, v.Kind, v.Count)
 
 		case error:
 			log.Println("error pub/sub, delivery has stopped")
-			return
+
+		default:
+			log.Println("DEFAULT CASE")
+			log.Println(pubSubConn.Receive())
 		}
 	}
 }
@@ -88,8 +96,14 @@ func Init() {
 		redisHost = ":6379"
 	}
 	Pool = newPool(redisHost)
-	// go deliverMessages()
+	conn := Pool.Get()
+	pubSubConn = &redis.PubSubConn{Conn: conn}
+	// whenever a key changes, we want to notify users.
+	conn.Do("CONFIG", "SET", "notify-keyspace-events", "KEA")
+	fmt.Println("Set the notify-keyspace-events to KEA")
+	pubSubConn.PSubscribe("__key*__:*")
 	Ping()
+	go deliverMessages()
 }
 
 /*
