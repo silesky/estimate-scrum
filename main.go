@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/garyburd/redigo/redis"
 	"github.com/gorilla/websocket"
 )
 
@@ -118,7 +119,33 @@ func getQuery(req *http.Request) Query {
 		adminID:   adminID,
 	}
 }
+func deliverMessages() {
+	log.Println("delivering messages.")
+	for {
 
+		switch v := db.PSC.Receive().(type) {
+		case redis.PMessage:
+			log.Printf("pmessage: %s: %s", v.Channel, v.Data)
+			sessionID := string(v.Data)
+			s, _ := daos.GetSession(sessionID)
+			fmt.Printf("%+v\n", s)
+
+		case redis.Message:
+			log.Printf("message: %s: %s", v.Channel, v.Data)
+
+		case redis.Subscription:
+
+			log.Printf("subscription: %s: %s %d\n", v.Channel, v.Kind, v.Count)
+
+		case error:
+			log.Println("error pub/sub, delivery has stopped")
+
+		default:
+			log.Println("DEFAULT CASE")
+			log.Println(db.PSC.Receive())
+		}
+	}
+}
 func isAdmin(req *http.Request) bool {
 	q := getQuery(req)
 	session, _ := daos.GetSession(q.sessionID)
@@ -199,6 +226,7 @@ func main() {
 	// this should return a session if available, or an error message
 	http.HandleFunc("/api/session", handleSession)
 	go handleEstimations()
+	go deliverMessages()
 	port := ":3333"
 	fmt.Println("Listenining on http://localhost" + port)
 	log.Fatal(http.ListenAndServe(port, nil))
