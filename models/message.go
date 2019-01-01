@@ -16,6 +16,7 @@ type UserMessageEstimation struct {
  estimationValue: 123,
 }
 */
+
 type AdminMessage struct {
 	// DateCreated string       `json:"dateCreated"`
 	SessionID  string `json:"sessionID"`

@@ -1,12 +1,7 @@
 import React, { Component } from 'react';
 import { getSession } from './utils';
+import { updateSession } from './utils/fetch';
 import './App.css';
-
-const mapEstimations = estimations =>
-  Object.keys(estimations).map(u => ({
-    username: u,
-    estimate: estimations[u],
-  }));
 
 const createWebSocketConnection = (onMessageCb, { id, adminID }) => {
   const WS_URL = `ws://localhost:3333/ws?id=${id}&adminID=${adminID}`;
@@ -22,9 +17,34 @@ const createWebSocketConnection = (onMessageCb, { id, adminID }) => {
   return socket;
 };
 
-const Estimate = ({ name, estimate }) => <h4>{`${name}: ${estimate}`}</h4>;
+const Estimate = ({ username, estimate }) => (
+  <h4>{`${username}: ${estimate}`}</h4>
+);
 
-const createMessage = (
+const Issue = ({ issue }) => {
+  const mapEstimations = estimations => {
+    return Object.keys(estimations).map(u => ({
+      username: u,
+      estimate: estimations[u],
+    }));
+  };
+
+  return (
+    <React.Fragment>
+      <h4>IssueID: {issue.issueID}</h4>
+      {mapEstimations(issue.estimations).map(estimate => (
+        <Estimate
+          username={estimate.username}
+          estimate={estimate.estimate}
+          key={estimate.username}
+        />
+      ))}
+      <hr />
+  </React.Fragment>
+  );
+};
+
+const createUserMessageEstimation = (
   username,
   estimationValue,
   sessionID = 'abc123',
@@ -34,13 +54,14 @@ const createMessage = (
   return JSON.stringify({ username, estimationValue, sessionID, issueID });
 };
 
+
 const CopyBox = ({ link }) => (
   <span id="CopyBox">
     <div className="copyBox">{link}</div>
   </span>
 );
 
-const AdminControlPanel = ({ isAdmin, setIssueTitle }) => {
+const AdminControlPanel = ({ isAdmin, setIssueTitle, setSelectedIssue }) => {
   if (!isAdmin) return null;
   return (
     <div id="AdminControlPanel">
@@ -51,34 +72,65 @@ const AdminControlPanel = ({ isAdmin, setIssueTitle }) => {
         id="issueTitle"
         onChange={e => setIssueTitle(e.target.value)}
       />
+      <label htmlFor="selectedIssue">Selected Issue</label>
+      <input
+        type="text"
+        id="selectedIssue"
+        onChange={e => setSelectedIssue(e.target.value)}
+      />
     </div>
   );
 };
 
+// {
+//   "session": {
+//     "dateCreated": "2018-12-31 06:23:47.193119 +0000 UTC",
+//     "ID": "b8b1b9a2-1bb7-4b7f-8ebb-276e0c7e2aa9",
+//     "storyPoints": [
+//       1,
+//       2,
+//       3
+//     ],
+//     "issues": [
+//       {
+//         "issueTitle": "",
+//         "issueID": "db1f7fd4-aff3-4495-80fa-ef842c7eda71",
+//         "estimations": {
+//           "13": 0,
+//           "123": 1231,
+//           "": 123,
+//           "bar": 456,
+//           "foo": 123
+//         }
+//       }
+//     ],
+//     "selectedIssue": "db1f7fd4-aff3-4495-80fa-ef842c7eda71"
+//   },
+//   "isAdmin": true
+// }
 export default class extends Component {
   state = {
+    issues: [],
     currentUser: '',
     currentEstimate: null,
-    estimations: {},
     isAdmin: false,
     error: false,
     // admin-only for setting
     issueTitle: '',
-    issueID: '',
+    selectedIssue: '',
   };
 
   wsSubscription = data => {
     // callback
-    console.assert(data.issueID, 'no issue id found!');
-    console.assert(data.username, 'no username found!');
+
+    console.assert(data.session.ID, 'no sessionID found!');
     this.setState({
       username: data.username,
-      sessionID: data.sessionID,
-      issueID: data.issueID,
-      estimations: {
-        ...this.state.estimations,
-        [`${data.username}`]: data.estimationValue,
-      },
+      sessionID: data.session.ID,
+      selectedIssue: data.session.selectedIssue,
+      issues: data.session.issues,
+      session: data.session,
+      isAdmin: data.isAdmin,
     });
   };
 
@@ -104,7 +156,7 @@ export default class extends Component {
       console.error('no session ID found. should be ?id=1234');
       return;
     }
-    const newEstimation = createMessage(
+    const newEstimation = createUserMessageEstimation(
       this.state.currentUser,
       this.state.currentEstimate,
       sessionID,
@@ -112,6 +164,9 @@ export default class extends Component {
     );
     this.socket.send(newEstimation);
   };
+  submitIssueTitle = (title) => {
+    updateSession({...this.state.session, issueTitle: title})
+  }
 
   setUser = currentUser => this.setState({ currentUser });
   setEstimate = currentEstimate => {
@@ -123,6 +178,7 @@ export default class extends Component {
   setAdminStatus = isAdmin => this.setState({ isAdmin });
   setError = bool => this.setState({ error: bool });
   setIssueTitle = issueTitle => this.setState({ issueTitle });
+  setSelectedIssue = issueID => this.setState({ selectedIssue: issueID });
   // http://localhost:3000/session?id=206f8d29-fa5a-4f0b-9051-6f7b4089967a
   async componentDidMount() {
     const { id, adminID } = this.getParams();
@@ -150,12 +206,15 @@ export default class extends Component {
 
     return (
       <div className="App">
+        <pre>{JSON.stringify(this.state, null, 2)}</pre>
         <AdminControlPanel
           isAdmin={this.state.isAdmin}
           setIssueTitle={this.setIssueTitle}
+          setSelectedIssue={this.setSelectedIssue}
         />
         <CopyBox link={this.getNonAdminSessionLink()} />
         <h1>Scrum Session!</h1>
+        <h2>Selected issue: {this.state.selectedIssue} </h2>
         {this.state.issueTitle && <h2>{this.state.issueTitle}</h2>}
         <div>
           <label htmlFor="username">Username</label>
@@ -175,12 +234,8 @@ export default class extends Component {
           <button id="submit" onClick={this.submitEstimation}>
             Submit
           </button>
-          {mapEstimations(this.state.estimations).map((el, ind) => (
-            <Estimate
-              name={el.username}
-              estimate={el.estimate}
-              key={`${el.name}${el.estimate}${ind}`}
-            />
+          {this.state.issues.map(issue => (
+            <Issue issue={issue} key={issue.issueID} />
           ))}
         </div>
       </div>
