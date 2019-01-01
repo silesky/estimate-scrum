@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { getSession } from './utils';
 import { updateSession } from './utils/fetch';
+import { pathOr }from 'ramda'
 import './App.css';
 
 const createWebSocketConnection = (onMessageCb, { id, adminID }) => {
@@ -108,8 +109,20 @@ const AdminControlPanel = ({ isAdmin, setIssueTitle, setSelectedIssue }) => {
 //   },
 //   "isAdmin": true
 // }
+
+const getIssues = pathOr([], ['session', 'issues'])
+const getSelectedIssues = pathOr('', ['session', 'selectedIssue'])
+const getIsAdmin = pathOr(false, ['session', 'isAdmin'])
+
 export default class extends Component {
   state = {
+    session: {
+       dateCreated: '',
+       ID: '',
+       storyPoints: [],
+       issues: [],
+       selectedIssue: '',
+    },
     issues: [],
     currentUser: '',
     currentEstimate: null,
@@ -127,8 +140,6 @@ export default class extends Component {
     this.setState({
       username: data.username,
       sessionID: data.session.ID,
-      selectedIssue: data.session.selectedIssue,
-      issues: data.session.issues,
       session: data.session,
       isAdmin: data.isAdmin,
     });
@@ -234,7 +245,7 @@ export default class extends Component {
           <button id="submit" onClick={this.submitEstimation}>
             Submit
           </button>
-          {this.state.issues.map(issue => (
+          {getIssues(this.state).map(issue => (
             <Issue issue={issue} key={issue.issueID} />
           ))}
         </div>
