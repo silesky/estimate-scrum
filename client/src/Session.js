@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { getSession } from './utils';
 import { updateSession } from './utils/fetch';
-import { pathOr }from 'ramda'
+import { pathOr } from 'ramda';
 import './App.css';
 
 const createWebSocketConnection = (onMessageCb, { id, adminID }) => {
@@ -22,7 +22,7 @@ const Estimate = ({ username, estimate }) => (
   <h4>{`${username}: ${estimate}`}</h4>
 );
 
-const Issue = ({ issue }) => {
+const Issue = ({ issue, isSelected }) => {
   const mapEstimations = estimations => {
     return Object.keys(estimations).map(u => ({
       username: u,
@@ -32,7 +32,7 @@ const Issue = ({ issue }) => {
 
   return (
     <React.Fragment>
-      <h4>IssueID: {issue.issueID}</h4>
+      <h4 style={{color: isSelected ? 'red' : 'black'}}>IssueID: {issue.issueID}</h4>
       {mapEstimations(issue.estimations).map(estimate => (
         <Estimate
           username={estimate.username}
@@ -41,10 +41,23 @@ const Issue = ({ issue }) => {
         />
       ))}
       <hr />
-  </React.Fragment>
+    </React.Fragment>
   );
 };
 
+const Issues = ({ issues, selectedIssue }) => {
+  return (
+    <React.Fragment>
+      {issues.map(issue => (
+        <Issue
+          isSelected={issue.issueID === selectedIssue}
+          issue={issue}
+          key={issue.issueID}
+        />
+      ))}
+    </React.Fragment>
+  );
+};
 const createUserMessageEstimation = (
   username,
   estimationValue,
@@ -54,7 +67,6 @@ const createUserMessageEstimation = (
   // got some unexpected
   return JSON.stringify({ username, estimationValue, sessionID, issueID });
 };
-
 
 const CopyBox = ({ link }) => (
   <span id="CopyBox">
@@ -110,18 +122,18 @@ const AdminControlPanel = ({ isAdmin, setIssueTitle, setSelectedIssue }) => {
 //   "isAdmin": true
 // }
 
-const getIssues = pathOr([], ['session', 'issues'])
-const getSelectedIssues = pathOr('', ['session', 'selectedIssue'])
-const getIsAdmin = pathOr(false, ['session', 'isAdmin'])
+const getIssues = pathOr([], ['session', 'issues']);
+const getSelectedIssue = pathOr('', ['session', 'selectedIssue']);
+const getIsAdmin = pathOr(false, ['session', 'isAdmin']);
 
 export default class extends Component {
   state = {
     session: {
-       dateCreated: '',
-       ID: '',
-       storyPoints: [],
-       issues: [],
-       selectedIssue: '',
+      dateCreated: '',
+      ID: '',
+      storyPoints: [],
+      issues: [],
+      selectedIssue: '',
     },
     issues: [],
     currentUser: '',
@@ -175,9 +187,9 @@ export default class extends Component {
     );
     this.socket.send(newEstimation);
   };
-  submitIssueTitle = (title) => {
-    updateSession({...this.state.session, issueTitle: title})
-  }
+  submitIssueTitle = title => {
+    updateSession({ ...this.state.session, issueTitle: title });
+  };
 
   setUser = currentUser => this.setState({ currentUser });
   setEstimate = currentEstimate => {
@@ -225,7 +237,7 @@ export default class extends Component {
         />
         <CopyBox link={this.getNonAdminSessionLink()} />
         <h1>Scrum Session!</h1>
-        <h2>Selected issue: {this.state.selectedIssue} </h2>
+        <h2>Selected issue: {getSelectedIssue(this.state)} </h2>
         {this.state.issueTitle && <h2>{this.state.issueTitle}</h2>}
         <div>
           <label htmlFor="username">Username</label>
@@ -245,9 +257,10 @@ export default class extends Component {
           <button id="submit" onClick={this.submitEstimation}>
             Submit
           </button>
-          {getIssues(this.state).map(issue => (
-            <Issue issue={issue} key={issue.issueID} />
-          ))}
+          <Issues
+            selectedIssue={getSelectedIssue(this.state)}
+            issues={getIssues(this.state)}
+          />
         </div>
       </div>
     );

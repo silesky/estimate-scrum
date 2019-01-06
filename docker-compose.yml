@@ -6,12 +6,14 @@ services:
       context: ./client
       dockerfile: Dockerfile
     volumes:
-      # Without the data volume ('/app/node_modules'), the node_modules directory would be overwritten by the mounting of the host directory at runtime...
-      # We still install node_modules as part of the dockerfile, because we don't want to couple the client container to a dev environment: should run on it's own.
-      - './app/node_modules'
       # make it so my client code is mounted into the app
       # when we do 'docker-compose up', the client directory is mounted into the container, overwriting the node_modules that were just installed when the container was built.
       - ./client:/app
+      # Without the data volume ('/app/node_modules'), the node_modules directory would be overwritten by the mounting of the host directory at runtime...
+      # We still install node_modules as part of the dockerfile, because we don't want to couple the client container to a dev environment: should run on it's own.
+      # This line means that we can actually delete node_modules on the client side and everything will work as expected.
+      # In order to update dependencies, we need to docker exec -it estimate-client /bin/sh and npm install
+      - ./app/node_modules
     ports:
       - '3000:3000'
     environment:
