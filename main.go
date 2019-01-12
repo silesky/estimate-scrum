@@ -72,18 +72,32 @@ func sendDataToClient(sessionID string, data models.SessionResponse) {
 	}
 }
 
-// looks at the channel and updates the database with any incoming messages.
-func handleIncomingMessages() {
-	for {
-		estimation := <-broadcast
-		sessionID := estimation.SessionID
-		fmt.Println("new estimation:")
-		fmt.Printf("%+v\n", estimation)
-		dbSaveError := daos.UpdateEstimations(sessionID, estimation.IssueID, estimation.Username, estimation.EstimationValue)
-		if dbSaveError != nil {
-			log.Printf("error: %v", dbSaveError)
-		}
+func parseBodyToUserMessageEstimationDTO(r *http.Request) (models.UserMessageEstimation, error) {
+	var estimation models.UserMessageEstimation
+	err := json.NewDecoder(r.Body).Decode(&estimation)
+	return estimation, err
+}
+
+// handles POSTS to /api/estimations
+func handleUpdateOrAddEstimation(w http.ResponseWriter, req *http.Request) {
+	estimationDto, err := parseBodyToUserMessageEstimationDTO(req)
+	if err != nil {
+		log.Printf("Body parsing error for estimation:", "error: %v", err)
 	}
+
+	dbSaveError := daos.UpdateUserEstimation(estimationDto)
+	if dbSaveError != nil {
+		http.Error(w, "Could not save estimation to DB.", http.StatusNotFound) // 4
+	}
+
+	// encode struct as json and write to stream
+	w.Header().Set("Content-Type", "application/json")
+	// order is important
+	w.WriteHeader(http.StatusCreated)
+	// serialize the struct as JSON (again)
+	fmt.Println("Estimation!", estimationDto)
+	json.NewEncoder(w).Encode(estimationDto)
+
 }
 
 // create a new session with /new -- should probably be a POST
@@ -216,6 +230,15 @@ func handleSession(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
+func handleUserEstimation(w http.ResponseWriter, req *http.Request) {
+	setupResponse(&w)
+	switch method := req.Method; method {
+	case "POST":
+		// this should just return the new sessionID and adminKey, and client can use that information to navigate to the new url.
+		handleUpdateOrAddEstimation(w, req)
+	}
+}
+
 func main() {
 
 	db.Init()
@@ -224,9 +247,9 @@ func main() {
 	// https://rickyanto.com/understanding-go-standard-http-libraries-servemux-handler-handle-and-handlefunc/
 	http.Handle("/", handler)
 	http.HandleFunc("/api/session", handleSession)
-
+	http.HandleFunc("/api/estimation", handleUserEstimation)
 	http.HandleFunc("/ws", handleConnections)
-	go handleIncomingMessages()
+	// go handleIncomingMessages()
 	go deliverMessages()
 
 	port := ":3333"

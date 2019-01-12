@@ -117,15 +117,15 @@ func updateIssue(sessionID string, newIssue models.Issue) error {
 	return err
 }
 
-// should take username, estimate (number), and issueID
-func UpdateEstimations(sessionID string, issueID string, username string, estimate int) error {
-	issue, err := getIssueByID(sessionID, issueID)
+// updates
+func UpdateUserEstimation(e models.UserMessageEstimation) error {
+	issue, err := getIssueByID(e.SessionID, e.IssueID)
 	if issue.IssueID == "" {
 		return errors.New("Unable to create estimation. No issue with issue ID found")
 	}
 	if err != nil {
 		panic(err)
 	}
-	issue.Estimations[username] = estimate
-	return updateIssue(sessionID, issue)
+	issue.Estimations[e.Username] = e.EstimationValue
+	return updateIssue(e.SessionID, issue)
 }
