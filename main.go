@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"estimate/daos"
 	"estimate/db"
 	"estimate/models"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 
@@ -23,6 +25,30 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
 	},
+}
+
+// helpers
+
+// setup CORS
+func setupCORS(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+}
+
+func respond(w http.ResponseWriter, r *http.Request, status int, data interface{}) {
+	var buf bytes.Buffer
+
+	if err := json.NewEncoder(&buf).Encode(data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	setupCORS(&w)
+	w.WriteHeader(status)
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := io.Copy(w, &buf); err != nil {
+		log.Println(err)
+	}
 }
 
 // grabs the message from the client and sends it to the channel
@@ -79,45 +105,32 @@ func parseBodyToUserMessageEstimationDTO(r *http.Request) (models.UserMessageEst
 }
 
 // handles POSTS to /api/estimations
-func handleUpdateOrAddEstimation(w http.ResponseWriter, req *http.Request) {
-	estimationDto, err := parseBodyToUserMessageEstimationDTO(req)
+func handleUpdateOrAddEstimation(w http.ResponseWriter, r *http.Request) {
+	estimationDto, err := parseBodyToUserMessageEstimationDTO(r)
 	if err != nil {
 		log.Printf("Body parsing error for estimation:", "error: %v", err)
+		respond(w, r, http.StatusInternalServerError, err)
+		return
 	}
 
 	dbSaveError := daos.UpdateUserEstimation(estimationDto)
 	if dbSaveError != nil {
-		http.Error(w, "Could not save estimation to DB.", http.StatusNotFound) // 4
+		respond(w, r, http.StatusNotFound, "Could not save estimation to DB.")
+		return
 	}
-
-	// encode struct as json and write to stream
-	w.Header().Set("Content-Type", "application/json")
-	// order is important
-	w.WriteHeader(http.StatusCreated)
-	// serialize the struct as JSON (again)
-	fmt.Println("Estimation!", estimationDto)
-	json.NewEncoder(w).Encode(estimationDto)
-
+	respond(w, r, http.StatusCreated, estimationDto)
 }
 
 // create a new session with /new -- should probably be a POST
-func handleCreateNewSession(w http.ResponseWriter, req *http.Request) {
-	fmt.Println(req)
+func handleCreateNewSession(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(r)
 	session, err := daos.CreateNewSession()
 	fmt.Println(session.ID)
 	if err != nil {
-		log.Printf("%v", err)
-		// https://golang.org/pkg/net/http/#pkg-constants
-		http.Error(w, "Unable to retrieve session.", http.StatusInternalServerError) // 500
+		respond(w, r, http.StatusInternalServerError, "Unable to retrieve session")
 		return
 	}
-	// encode struct as json and write to stream
-	w.Header().Set("Content-Type", "application/json")
-	// order is important
-	w.WriteHeader(http.StatusCreated)
-	// serialize the struct as JSON (again)
-	fmt.Println("SESSION!", session)
-	json.NewEncoder(w).Encode(session)
+	respond(w, r, http.StatusCreated, session)
 }
 
 type Query struct {
@@ -125,9 +138,9 @@ type Query struct {
 	adminID   string
 }
 
-func getQuery(req *http.Request) Query {
-	sessionID := req.URL.Query().Get("id")
-	adminID := req.URL.Query().Get("adminID")
+func getQuery(r *http.Request) Query {
+	sessionID := r.URL.Query().Get("id")
+	adminID := r.URL.Query().Get("adminID")
 	return Query{
 		sessionID: sessionID,
 		adminID:   adminID,
@@ -162,25 +175,23 @@ func deliverMessages() {
 		}
 	}
 }
-func isAdmin(req *http.Request) bool {
-	q := getQuery(req)
+func isAdmin(r *http.Request) bool {
+	q := getQuery(r)
 	session, _ := daos.GetSession(q.sessionID)
 	return q.adminID == session.AdminID
 }
 
-// for requesting a specific session
-func handleRequestSession(w http.ResponseWriter, req *http.Request) {
-	q := getQuery(req)
+// for ruesting a specific session
+func handleRequestSession(w http.ResponseWriter, r *http.Request) {
+	q := getQuery(r)
 	session, err := daos.GetSession(q.sessionID)
 	if err != nil {
+		respond(w, r, http.StatusNotFound, err)
 		log.Printf(q.sessionID)
-		http.Error(w, "No session with that Session ID found.", http.StatusNotFound) // 404
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	response := session.GetSessionResponse(q.adminID)
-	fmt.Printf("%+v\n", response)
-	json.NewEncoder(w).Encode(response)
+	data := session.GetSessionResponse(q.adminID)
+	respond(w, r, http.StatusOK, data)
 }
 
 func parseBodyToSession(r *http.Request) (models.Session, error) {
@@ -189,53 +200,40 @@ func parseBodyToSession(r *http.Request) (models.Session, error) {
 	return session, err
 }
 
-func handleUpdateSession(w http.ResponseWriter, req *http.Request) {
-	q := getQuery(req)
-	session, err := parseBodyToSession(req)
+func handleUpdateSession(w http.ResponseWriter, r *http.Request) {
+	q := getQuery(r)
+	session, err := parseBodyToSession(r)
 	if err != nil {
-		http.Error(w, "Cannot parse req body.", http.StatusInternalServerError) // 404
+		respond(w, r, http.StatusInternalServerError, err)
+		fmt.Println("cannot parse client JSON body.")
 		return
 	}
-	if !isAdmin(req) {
-		http.Error(w, "Unauthorized user.", http.StatusUnauthorized)
+	if !isAdmin(r) {
+		respond(w, r, http.StatusUnauthorized, "Unauthorized user.")
 		return
 	}
 	daos.UpdateSession(q.sessionID, session)
-	// encode struct as json and write to stream
-	w.Header().Set("Content-Type", "application/json")
-	// order is important
-	w.WriteHeader(http.StatusOK)
-	// serialize the struct as JSON (again)
-	json.NewEncoder(w).Encode("updated successfully.")
+	respond(w, r, http.StatusOK, "updated successfully.")
 
 }
 
-// setup CORS
-func setupResponse(w *http.ResponseWriter) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-}
-
-func handleSession(w http.ResponseWriter, req *http.Request) {
-	setupResponse(&w)
-	switch method := req.Method; method {
+func handleSession(w http.ResponseWriter, r *http.Request) {
+	switch method := r.Method; method {
 	case "GET":
-		handleRequestSession(w, req)
+		handleRequestSession(w, r)
 	case "POST":
 		// this should just return the new sessionID and adminKey, and client can use that information to navigate to the new url.
-		handleCreateNewSession(w, req)
+		handleCreateNewSession(w, r)
 	case "PUT":
-		handleUpdateSession(w, req)
+		handleUpdateSession(w, r)
 	}
 }
 
-func handleUserEstimation(w http.ResponseWriter, req *http.Request) {
-	setupResponse(&w)
-	switch method := req.Method; method {
+func handleUserEstimation(w http.ResponseWriter, r *http.Request) {
+	switch method := r.Method; method {
 	case "POST":
 		// this should just return the new sessionID and adminKey, and client can use that information to navigate to the new url.
-		handleUpdateOrAddEstimation(w, req)
+		handleUpdateOrAddEstimation(w, r)
 	}
 }
 
