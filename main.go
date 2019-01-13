@@ -32,7 +32,7 @@ var upgrader = websocket.Upgrader{
 func handleConnections(w http.ResponseWriter, r *http.Request) {
 	log.Println(r)
 
-	sessionID := getQuery(r).sessionID
+	sessionID := apis.GetQuery(r).sessionID
 
 	fmt.Println(sessionID)
 	// upgrade initial GET to a websocket
@@ -110,20 +110,6 @@ func handleCreateNewSession(w http.ResponseWriter, r *http.Request) {
 	apis.Respond(w, r, http.StatusCreated, session)
 }
 
-type Query struct {
-	sessionID string
-	adminID   string
-}
-
-func getQuery(r *http.Request) Query {
-	sessionID := r.URL.Query().Get("id")
-	adminID := r.URL.Query().Get("adminID")
-	return Query{
-		sessionID: sessionID,
-		adminID:   adminID,
-	}
-}
-
 func deliverMessages() {
 	log.Println("delivering messages.")
 	for {
@@ -152,15 +138,10 @@ func deliverMessages() {
 		}
 	}
 }
-func isAdmin(r *http.Request) bool {
-	q := getQuery(r)
-	session, _ := daos.GetSession(q.sessionID)
-	return q.adminID == session.AdminID
-}
 
 // for ruesting a specific session
 func handleRequestSession(w http.ResponseWriter, r *http.Request) {
-	q := getQuery(r)
+	q := apis.GetQuery(r)
 	session, err := daos.GetSession(q.sessionID)
 	if err != nil {
 		apis.Respond(w, r, http.StatusNotFound, err)
@@ -178,14 +159,14 @@ func parseBodyToSession(r *http.Request) (models.Session, error) {
 }
 
 func handleUpdateSession(w http.ResponseWriter, r *http.Request) {
-	q := getQuery(r)
+	q := apis.GetQuery(r)
 	session, err := parseBodyToSession(r)
 	if err != nil {
 		apis.Respond(w, r, http.StatusInternalServerError, err)
 		fmt.Println("cannot parse client JSON body.")
 		return
 	}
-	if !isAdmin(r) {
+	if !apis.IsAdmin(r) {
 		apis.Respond(w, r, http.StatusUnauthorized, "Unauthorized user.")
 		return
 	}

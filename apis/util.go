@@ -3,6 +3,7 @@ package apis
 import (
 	"bytes"
 	"encoding/json"
+	"estimate/daos"
 	"io"
 	"log"
 	"net/http"
@@ -28,4 +29,24 @@ func Respond(w http.ResponseWriter, r *http.Request, status int, data interface{
 	if _, err := io.Copy(w, &buf); err != nil {
 		log.Println(err)
 	}
+}
+
+type query struct {
+	sessionID string
+	adminID   string
+}
+
+func GetQuery(r *http.Request) query {
+	sessionID := r.URL.Query().Get("id")
+	adminID := r.URL.Query().Get("adminID")
+	return query{
+		sessionID: sessionID,
+		adminID:   adminID,
+	}
+}
+
+func IsAdmin(r *http.Request) bool {
+	q := GetQuery(r)
+	session, _ := daos.GetSession(q.sessionID)
+	return q.adminID == session.AdminID
 }
