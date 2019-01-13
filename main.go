@@ -31,8 +31,8 @@ var upgrader = websocket.Upgrader{
 // grabs the message from the client and sends it to the channel
 func handleConnections(w http.ResponseWriter, r *http.Request) {
 	log.Println(r)
-
-	sessionID := apis.GetQuery(r).sessionID
+	apis.SetupCORS(&w)
+	sessionID := apis.GetQuery(r).SessionID
 
 	fmt.Println(sessionID)
 	// upgrade initial GET to a websocket
@@ -142,13 +142,13 @@ func deliverMessages() {
 // for ruesting a specific session
 func handleRequestSession(w http.ResponseWriter, r *http.Request) {
 	q := apis.GetQuery(r)
-	session, err := daos.GetSession(q.sessionID)
+	session, err := daos.GetSession(q.SessionID)
 	if err != nil {
 		apis.Respond(w, r, http.StatusNotFound, err)
-		log.Printf(q.sessionID)
+		log.Printf(q.SessionID)
 		return
 	}
-	data := session.GetSessionResponse(q.adminID)
+	data := session.GetSessionResponse(q.AdminID)
 	apis.Respond(w, r, http.StatusOK, data)
 }
 
@@ -170,12 +170,13 @@ func handleUpdateSession(w http.ResponseWriter, r *http.Request) {
 		apis.Respond(w, r, http.StatusUnauthorized, "Unauthorized user.")
 		return
 	}
-	daos.UpdateSession(q.sessionID, session)
+	daos.UpdateSession(q.SessionID, session)
 	apis.Respond(w, r, http.StatusOK, "updated successfully.")
 
 }
 
 func handleSession(w http.ResponseWriter, r *http.Request) {
+	apis.SetupCORS(&w)
 	switch method := r.Method; method {
 	case "GET":
 		handleRequestSession(w, r)
@@ -188,6 +189,7 @@ func handleSession(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleUserEstimation(w http.ResponseWriter, r *http.Request) {
+	apis.SetupCORS(&w)
 	switch method := r.Method; method {
 	case "POST":
 		// this should just return the new sessionID and adminKey, and client can use that information to navigate to the new url.
@@ -195,13 +197,17 @@ func handleUserEstimation(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func handleIndex(w http.ResponseWriter, r *http.Request) {
+	http.FileServer(http.Dir("./client"))
+}
+
 func main() {
 
 	db.Init()
 	clientSessions = db.WsStore.Users
-	handler := http.FileServer(http.Dir("./client"))
+
 	// https://rickyanto.com/understanding-go-standard-http-libraries-servemux-handler-handle-and-handlefunc/
-	http.Handle("/", handler)
+	http.HandleFunc("/", handleIndex)
 	http.HandleFunc("/api/session", handleSession)
 	http.HandleFunc("/api/estimation", handleUserEstimation)
 	http.HandleFunc("/ws", handleConnections)
