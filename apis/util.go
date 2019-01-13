@@ -1,35 +1,31 @@
 package apis
 
 import (
-	"strconv"
-
-	"github.com/go-ozzo/ozzo-routing"
-	"github.com/qiangxue/golang-restful-starter-kit/util"
+	"bytes"
+	"encoding/json"
+	"io"
+	"log"
+	"net/http"
 )
 
-const (
-	DEFAULT_PAGE_SIZE int = 100
-	MAX_PAGE_SIZE     int = 1000
-)
-
-func getPaginatedListFromRequest(c *routing.Context, count int) *util.PaginatedList {
-	page := parseInt(c.Query("page"), 1)
-	perPage := parseInt(c.Query("per_page"), DEFAULT_PAGE_SIZE)
-	if perPage <= 0 {
-		perPage = DEFAULT_PAGE_SIZE
-	}
-	if perPage > MAX_PAGE_SIZE {
-		perPage = MAX_PAGE_SIZE
-	}
-	return util.NewPaginatedList(page, perPage, count)
+// setup CORS
+func setupCORS(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 }
 
-func parseInt(value string, defaultValue int) int {
-	if value == "" {
-		return defaultValue
+func Respond(w http.ResponseWriter, r *http.Request, status int, data interface{}) {
+	var buf bytes.Buffer
+
+	if err := json.NewEncoder(&buf).Encode(data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-	if result, err := strconv.Atoi(value); err == nil {
-		return result
+	setupCORS(&w)
+	w.WriteHeader(status)
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := io.Copy(w, &buf); err != nil {
+		log.Println(err)
 	}
-	return defaultValue
 }

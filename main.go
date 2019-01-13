@@ -1,13 +1,12 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
+	"estimate/apis"
 	"estimate/daos"
 	"estimate/db"
 	"estimate/models"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 
@@ -28,28 +27,6 @@ var upgrader = websocket.Upgrader{
 }
 
 // helpers
-
-// setup CORS
-func setupCORS(w *http.ResponseWriter) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-}
-
-func respond(w http.ResponseWriter, r *http.Request, status int, data interface{}) {
-	var buf bytes.Buffer
-
-	if err := json.NewEncoder(&buf).Encode(data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	setupCORS(&w)
-	w.WriteHeader(status)
-	w.Header().Set("Content-Type", "application/json")
-	if _, err := io.Copy(w, &buf); err != nil {
-		log.Println(err)
-	}
-}
 
 // grabs the message from the client and sends it to the channel
 func handleConnections(w http.ResponseWriter, r *http.Request) {
@@ -109,16 +86,16 @@ func handleUpdateOrAddEstimation(w http.ResponseWriter, r *http.Request) {
 	estimationDto, err := parseBodyToUserMessageEstimationDTO(r)
 	if err != nil {
 		log.Printf("Body parsing error for estimation:", "error: %v", err)
-		respond(w, r, http.StatusInternalServerError, err)
+		apis.Respond(w, r, http.StatusInternalServerError, err)
 		return
 	}
 
 	dbSaveError := daos.UpdateUserEstimation(estimationDto)
 	if dbSaveError != nil {
-		respond(w, r, http.StatusNotFound, "Could not save estimation to DB.")
+		apis.Respond(w, r, http.StatusNotFound, "Could not save estimation to DB.")
 		return
 	}
-	respond(w, r, http.StatusCreated, estimationDto)
+	apis.Respond(w, r, http.StatusCreated, estimationDto)
 }
 
 // create a new session with /new -- should probably be a POST
@@ -127,10 +104,10 @@ func handleCreateNewSession(w http.ResponseWriter, r *http.Request) {
 	session, err := daos.CreateNewSession()
 	fmt.Println(session.ID)
 	if err != nil {
-		respond(w, r, http.StatusInternalServerError, "Unable to retrieve session")
+		apis.Respond(w, r, http.StatusInternalServerError, "Unable to retrieve session")
 		return
 	}
-	respond(w, r, http.StatusCreated, session)
+	apis.Respond(w, r, http.StatusCreated, session)
 }
 
 type Query struct {
@@ -186,12 +163,12 @@ func handleRequestSession(w http.ResponseWriter, r *http.Request) {
 	q := getQuery(r)
 	session, err := daos.GetSession(q.sessionID)
 	if err != nil {
-		respond(w, r, http.StatusNotFound, err)
+		apis.Respond(w, r, http.StatusNotFound, err)
 		log.Printf(q.sessionID)
 		return
 	}
 	data := session.GetSessionResponse(q.adminID)
-	respond(w, r, http.StatusOK, data)
+	apis.Respond(w, r, http.StatusOK, data)
 }
 
 func parseBodyToSession(r *http.Request) (models.Session, error) {
@@ -204,16 +181,16 @@ func handleUpdateSession(w http.ResponseWriter, r *http.Request) {
 	q := getQuery(r)
 	session, err := parseBodyToSession(r)
 	if err != nil {
-		respond(w, r, http.StatusInternalServerError, err)
+		apis.Respond(w, r, http.StatusInternalServerError, err)
 		fmt.Println("cannot parse client JSON body.")
 		return
 	}
 	if !isAdmin(r) {
-		respond(w, r, http.StatusUnauthorized, "Unauthorized user.")
+		apis.Respond(w, r, http.StatusUnauthorized, "Unauthorized user.")
 		return
 	}
 	daos.UpdateSession(q.sessionID, session)
-	respond(w, r, http.StatusOK, "updated successfully.")
+	apis.Respond(w, r, http.StatusOK, "updated successfully.")
 
 }
 
