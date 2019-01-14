@@ -13,6 +13,7 @@ services:
       # We still install node_modules as part of the dockerfile, because we don't want to couple the client container to a dev environment: should run on it's own.
       # This line means that we can actually delete node_modules on the client side and everything will work as expected.
       # In order to update dependencies, we need to docker exec -it estimate-client /bin/sh and npm install
+      # `docker-compose build --no-cache` is neccessary everytime package.json changes if this line is here.
       - ./app/node_modules
     ports:
       - '3000:3000'
