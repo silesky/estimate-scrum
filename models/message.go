@@ -1,11 +1,19 @@
 package models
 
+import validation "github.com/go-ozzo/ozzo-validation"
+
 // should
 type UserMessageEstimation struct {
 	Username        string `json:"username"`
 	SessionID       string `json:"sessionID"`
 	IssueID         string `json:"issueID"`
 	EstimationValue int    `json:"estimationValue"`
+}
+
+func (u UserMessageEstimation) OK() error {
+	return validation.ValidateStruct(
+		validation.Field(u.IssueID, validation.Required),
+	)
 }
 
 /*

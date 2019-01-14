@@ -1,6 +1,7 @@
 package models
 
-// session that
+import validation "github.com/go-ozzo/ozzo-validation"
+
 type Session struct {
 	AdminID       string  `json:"adminID,omitempty"`
 	DateCreated   string  `json:"dateCreated"`
@@ -8,6 +9,12 @@ type Session struct {
 	StoryPoints   []int   `json:"storyPoints"`
 	Issues        []Issue `json:"issues"`
 	SelectedIssue string  `json:"selectedIssue"`
+}
+
+func (s Session) OK() error {
+	return validation.ValidateStruct(
+		validation.Field(s.ID, validation.Required),
+	)
 }
 
 type SessionResponse struct {

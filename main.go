@@ -75,27 +75,21 @@ func sendDataToClient(sessionID string, data models.SessionResponse) {
 	}
 }
 
-func parseBodyToUserMessageEstimationDTO(r *http.Request) (models.UserMessageEstimation, error) {
-	var estimation models.UserMessageEstimation
-	err := json.NewDecoder(r.Body).Decode(&estimation)
-	return estimation, err
-}
-
 // handles POSTS to /api/estimations
 func handleUpdateOrAddEstimation(w http.ResponseWriter, r *http.Request) {
-	estimationDto, err := parseBodyToUserMessageEstimationDTO(r)
+	var e models.UserMessageEstimation
+	err := apis.Decode(r, &e)
 	if err != nil {
-		log.Printf("Body parsing error for estimation:", "error: %v", err)
 		apis.Respond(w, r, http.StatusInternalServerError, err)
 		return
 	}
 
-	dbSaveError := daos.UpdateUserEstimation(estimationDto)
+	dbSaveError := daos.UpdateUserEstimation(e)
 	if dbSaveError != nil {
 		apis.Respond(w, r, http.StatusNotFound, "Could not save estimation to DB.")
 		return
 	}
-	apis.Respond(w, r, http.StatusCreated, estimationDto)
+	apis.Respond(w, r, http.StatusCreated, e)
 }
 
 // create a new session with /new -- should probably be a POST
@@ -152,15 +146,10 @@ func handleRequestSession(w http.ResponseWriter, r *http.Request) {
 	apis.Respond(w, r, http.StatusOK, data)
 }
 
-func parseBodyToSession(r *http.Request) (models.Session, error) {
-	var session models.Session
-	err := json.NewDecoder(r.Body).Decode(&session)
-	return session, err
-}
-
 func handleUpdateSession(w http.ResponseWriter, r *http.Request) {
 	q := apis.GetQuery(r)
-	session, err := parseBodyToSession(r)
+	var session models.Session
+	err := apis.Decode(r, &session)
 	if err != nil {
 		apis.Respond(w, r, http.StatusInternalServerError, err)
 		fmt.Println("cannot parse client JSON body.")

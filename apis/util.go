@@ -9,6 +9,19 @@ import (
 	"net/http"
 )
 
+// structs should implement the one-method OK interface, that either retu
+func Decode(r *http.Request, v interface {
+	OK() error
+}) error {
+	if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
+		return err
+	}
+	if err := v.OK(); err != nil {
+		return err
+	}
+	return nil
+}
+
 // setup CORS
 func SetupCORS(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
