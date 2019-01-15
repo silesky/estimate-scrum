@@ -15,6 +15,8 @@ estimate
 ```
 go get github.com/oxequa/realize
 realize start
+docker-compose build --no-cache
+docker-compose up
 ```
 
 

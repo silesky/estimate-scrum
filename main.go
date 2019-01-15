@@ -124,8 +124,8 @@ func deliverMessages() {
 			log.Printf("subscription: %s: %s %d\n", v.Channel, v.Kind, v.Count)
 
 		case error:
-			log.Println("error pub/sub, delivery has stopped")
-
+			log.Println()
+			panic("error pub/sub, delivery has stopped")
 		default:
 			log.Println("DEFAULT CASE")
 			log.Println(db.PSC.Receive())
