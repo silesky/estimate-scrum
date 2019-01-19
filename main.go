@@ -80,7 +80,7 @@ func handleUpdateOrAddEstimation(w http.ResponseWriter, r *http.Request) {
 	var e models.UserMessageEstimation
 	err := apis.Decode(r, &e)
 	if err != nil {
-		apis.Respond(w, r, http.StatusInternalServerError, err)
+		apis.Respond(w, r, http.StatusInternalServerError, "Unable to parse estimation.")
 		return
 	}
 

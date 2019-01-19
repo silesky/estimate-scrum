@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"estimate/daos"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -14,6 +15,10 @@ func Decode(r *http.Request, v interface {
 	OK() error
 }) error {
 	if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
+		if terr, ok := err.(*json.UnmarshalTypeError); ok {
+			fmt.Printf("Failed to unmarshal field %s \n", terr.Field)
+		}
+		fmt.Println(err)
 		return err
 	}
 	if err := v.OK(); err != nil {

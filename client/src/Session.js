@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { getSession } from './utils';
-import { updateSession } from './utils/fetch';
+import * as Fetch from './utils/fetch';
 import { pathOr } from 'ramda';
 import './App.css';
 
@@ -32,7 +32,9 @@ const Issue = ({ issue, isSelected }) => {
 
   return (
     <React.Fragment>
-      <h4 style={{color: isSelected ? 'red' : 'black'}}>IssueID: {issue.issueID}</h4>
+      <h4 style={{ color: isSelected ? 'red' : 'black' }}>
+        IssueID: {issue.issueID}
+      </h4>
       {mapEstimations(issue.estimations).map(estimate => (
         <Estimate
           username={estimate.username}
@@ -58,15 +60,12 @@ const Issues = ({ issues, selectedIssue }) => {
     </React.Fragment>
   );
 };
-const createUserMessageEstimation = (
+const createEstimation = (
   username,
   estimationValue,
   sessionID = 'abc123',
   issueID,
-) => {
-  // got some unexpected
-  return JSON.stringify({ username, estimationValue, sessionID, issueID });
-};
+) => ({ username, estimationValue, sessionID, issueID });
 
 const CopyBox = ({ link }) => (
   <span id="CopyBox">
@@ -164,7 +163,6 @@ export default class extends Component {
     return {
       id: qp.get('id'),
       adminID: qp.get('adminID'),
-      issueID: qp.get('issueID'),
     };
   }
 
@@ -173,22 +171,25 @@ export default class extends Component {
     return `${window.location.host}/session?id=${sessionID}`;
   }
 
-  submitEstimation = () => {
-    const { id: sessionID, issueID } = this.getParams();
-    if (!sessionID) {
-      console.error('no session ID found. should be ?id=1234');
-      return;
-    }
-    const newEstimation = createUserMessageEstimation(
+  submitEstimation = async () => {
+    const { id: sessionID } = this.getParams();
+    const issueID = this.state.session.selectedIssue;
+    const newEstimation = createEstimation(
       this.state.currentUser,
       this.state.currentEstimate,
       sessionID,
       issueID,
     );
-    this.socket.send(newEstimation);
+
+    try {
+      const res = await Fetch.addEstimation(newEstimation);
+      console.log(res);
+    } catch (err) {
+      console.warn(err);
+    }
   };
   submitIssueTitle = title => {
-    updateSession({ ...this.state.session, issueTitle: title });
+    Fetch.updateSession({ ...this.state.session, issueTitle: title });
   };
 
   setUser = currentUser => this.setState({ currentUser });
@@ -250,6 +251,7 @@ export default class extends Component {
         <div>
           <label htmlFor="estimation">Estimation</label>
           <input
+            placeholder="my number"
             onChange={event => this.setEstimate(event.target.value)}
             type="number"
             id="estimation"

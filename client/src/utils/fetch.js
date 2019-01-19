@@ -1,25 +1,37 @@
-const SERVER_HOST = "http://localhost:3333"
+const SERVER_HOST = 'http://localhost:3333';
 const createFetch = (route, method) => {
- return (data) => {
-  const options = {
-    method,
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    },
-    ...(data !== undefined ? { body: JSON.stringify(data) } : {}),
-  }
-  return fetch(`${SERVER_HOST}${route}`, options).then(res => res.json())
- }
-}
+  return data => {
+    const options = {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      ...(data !== undefined ? { body: JSON.stringify(data) } : {}),
+    };
+    console.log('options', options)
+    return fetch(`${SERVER_HOST}${route}`, options).then(res => {
+      if (!res.ok) throw res;
+      return res.json();
+    });
+  };
+};
 
-export const createNewSession = createFetch('/api/session', 'POST')
+export const createNewSession = createFetch('/api/session', 'POST');
 
 export const getSession = async (id, adminID) => {
-  const adminStr = adminID ? `adminID=${adminID}` : ''
-  return createFetch(`/api/session?id=${id}&${adminStr}`, 'GET')()
+  const adminStr = adminID ? `adminID=${adminID}` : '';
+  return createFetch(`/api/session?id=${id}&${adminStr}`, 'GET')();
+};
+export const addEstimation = data => {
+ return createFetch(`/api/estimation`, 'POST')(data)
 }
-
+//
+// const validateEstimation = () => {
+//   "username": "JIM",
+// 	"sessionID": "fce5fbc2-ce78-4da4-a7da-6e3ddf678571",
+// 	"issueID": "b98393de-3d75-46f0-a439-3a6a2522891a",
+// 	"estimationValue": 123
+// }
 
 //   {
 //     "dateCreated": "2018-12-31 06:23:47.193119 +0000 UTC",
@@ -46,6 +58,6 @@ export const getSession = async (id, adminID) => {
 //   },
 
 export const updateSession = async (id, adminID, newSession) => {
-  const adminStr = adminID ? `adminID=${adminID}` : ''
-  return createFetch(`/api/session?id=${id}&${adminStr}`, 'PUT')(JSON.stringify(newSession))
-}
+  const adminStr = adminID ? `adminID=${adminID}` : '';
+  return createFetch(`/api/session?id=${id}&${adminStr}`, 'PUT')(newSession);
+};
