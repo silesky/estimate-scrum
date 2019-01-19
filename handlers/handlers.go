@@ -35,10 +35,10 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
-	if db.ClientSessions[sessionID] == nil {
-		db.ClientSessions[sessionID] = map[*websocket.Conn]bool{}
+	if db.WsStore.Users[sessionID] == nil {
+		db.WsStore.Users[sessionID] = map[*websocket.Conn]bool{}
 	}
-	db.ClientSessions[sessionID][ws] = true
+	db.WsStore.Users[sessionID][ws] = true
 	for {
 		// add type switches so I can handle both AdminMessages and UserMessages
 		var msg models.UserMessageEstimation
@@ -49,7 +49,7 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 				log.Printf("syntax error at byte offset %d", e.Offset)
 			}
 			// TODO: this is wrong
-			delete(db.ClientSessions[sessionID], ws)
+			delete(db.WsStore.Users[sessionID], ws)
 			break
 		}
 		db.WsStore.Broadcast <- msg
@@ -88,12 +88,12 @@ func HandleCreateNewSession(w http.ResponseWriter, r *http.Request) {
 }
 
 func sendDataToClient(sessionID string, data models.SessionResponse) {
-	for client := range db.ClientSessions[sessionID] {
+	for client := range db.WsStore.Users[sessionID] {
 		err := client.WriteJSON(data)
 		if err != nil {
 			log.Printf("error: %v", err)
 			client.Close()
-			delete(db.ClientSessions[sessionID], client)
+			delete(db.WsStore.Users[sessionID], client)
 		}
 	}
 }

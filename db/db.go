@@ -28,10 +28,6 @@ import (
 // WSUserMap holds all the users. TODO: add 'isAdmin' information
 type WSUserMap = map[string]map[*websocket.Conn]bool
 
-var (
-	ClientSessions WSUserMap
-)
-
 type Store struct {
 	Users     WSUserMap
 	Broadcast chan models.UserMessageEstimation
@@ -94,7 +90,6 @@ func Init() {
 	conn.Do("CONFIG", "SET", "notify-keyspace-events", "KEA")
 	fmt.Println("Set the notify-keyspace-events to KEA")
 	PSC.PSubscribe("__key*__:*")
-	ClientSessions = WsStore.Users
 	Ping()
 }
 
