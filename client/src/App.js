@@ -1,8 +1,8 @@
 import React from 'react'
 import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
-
-import Home from './Home'
-import Session from './Session'
+import './App.css';
+import Home from './Pages/Home'
+import Session from './Pages/Session'
 
 export default () => (
   <Router>

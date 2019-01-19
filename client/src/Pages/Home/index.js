@@ -1,5 +1,5 @@
 import React from 'react';
-import { createNewSession } from './utils';
+import { createNewSession } from '../../utils';
 
 export default class extends React.Component {
   async onNewSessionClick() {

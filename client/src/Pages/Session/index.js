@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
-import { getSession } from './utils';
-import * as Fetch from './utils/fetch';
+import { getSession } from '../../utils';
+import * as Fetch from '../../utils/fetch';
 import { pathOr } from 'ramda';
-import './App.css';
+
 
 const createWebSocketConnection = (onMessageCb, { id, adminID }) => {
   const WS_URL = `ws://localhost:3333/ws?id=${id}&adminID=${adminID}`;
@@ -237,7 +237,7 @@ export default class extends Component {
           setSelectedIssue={this.setSelectedIssue}
         />
         <CopyBox link={this.getNonAdminSessionLink()} />
-        <h1>Scrum Session!</h1>
+        <h1>Scrum Session!!!</h1>
         <h2>Selected issue: {getSelectedIssue(this.state)} </h2>
         {this.state.issueTitle && <h2>{this.state.issueTitle}</h2>}
         <div>
@@ -256,6 +256,7 @@ export default class extends Component {
             type="number"
             id="estimation"
           />
+
           <button id="submit" onClick={this.submitEstimation}>
             Submit
           </button>
