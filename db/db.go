@@ -23,13 +23,18 @@ import (
 		...
 	}
 */
+// globals
 
 // WSUserMap holds all the users. TODO: add 'isAdmin' information
 type WSUserMap = map[string]map[*websocket.Conn]bool
 
+var (
+	ClientSessions WSUserMap
+)
+
 type Store struct {
 	Users     WSUserMap
-	Broadcast chan models.Estimation
+	Broadcast chan models.UserMessageEstimation
 	sync.Mutex
 }
 
@@ -77,7 +82,7 @@ func Init() {
 	redisHost := os.Getenv("REDIS_HOST")
 	WsStore = &Store{
 		Users:     make(WSUserMap),
-		Broadcast: make(chan models.Estimation),
+		Broadcast: make(chan models.UserMessageEstimation),
 	}
 	if redisHost == "" {
 		redisHost = ":6379"
@@ -89,6 +94,7 @@ func Init() {
 	conn.Do("CONFIG", "SET", "notify-keyspace-events", "KEA")
 	fmt.Println("Set the notify-keyspace-events to KEA")
 	PSC.PSubscribe("__key*__:*")
+	ClientSessions = WsStore.Users
 	Ping()
 }
 
