@@ -107,7 +107,7 @@ func DeliverMessages() {
 			log.Printf("pmessage: %s: %s", v.Channel, v.Data)
 			sessionID := string(v.Data)
 			s, _ := daos.GetSession(sessionID)
-			sendDataToClient(sessionID, s.GetSessionResponse(""))
+			sendDataToClient(sessionID, s.Response(""))
 			fmt.Printf("%+v\n", s)
 
 		case redis.Message:
@@ -136,7 +136,7 @@ func HandleRequestSession(w http.ResponseWriter, r *http.Request) {
 		log.Printf(q.SessionID)
 		return
 	}
-	data := session.GetSessionResponse(q.AdminID)
+	data := session.Response(q.AdminID)
 	apis.Respond(w, r, http.StatusOK, data)
 }
 

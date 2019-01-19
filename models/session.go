@@ -22,11 +22,16 @@ type SessionResponse struct {
 	IsAdmin bool    `json:"isAdmin"`
 }
 
-// get sanitized session reponse (this request will get sent to every websocket client.)
-func (s Session) GetSessionResponse(adminID string) SessionResponse {
+// Session that is sanitized of private data
+func (s Session) Public() Session {
 	s.AdminID = "" // sanitize session
+	return s
+}
+
+// Session API response for admins and non-admins alike
+func (s Session) Response(adminID string) SessionResponse {
 	return SessionResponse{
-		Session: s,
+		Session: s.Public(),
 		IsAdmin: adminID == s.AdminID,
 	}
 }

@@ -35,3 +35,4 @@ server
 ERRORS.md
 
 *.rdb
+debug

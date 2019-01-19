@@ -2,8 +2,7 @@ import React, { Component } from 'react';
 import { getSession } from '../../utils';
 import * as Fetch from '../../utils/fetch';
 import { pathOr } from 'ramda';
-
-
+import StoryPointSelector from '../../Components/StoryPointsSelector';
 const createWebSocketConnection = (onMessageCb, { id, adminID }) => {
   const WS_URL = `ws://localhost:3333/ws?id=${id}&adminID=${adminID}`;
   const socket = new WebSocket(WS_URL);
@@ -90,6 +89,7 @@ const AdminControlPanel = ({ isAdmin, setIssueTitle, setSelectedIssue }) => {
         id="selectedIssue"
         onChange={e => setSelectedIssue(e.target.value)}
       />
+      <StoryPointSelector onChange={console.log} />
     </div>
   );
 };
@@ -146,13 +146,11 @@ export default class extends Component {
 
   wsSubscription = data => {
     // callback
-
-    console.assert(data.session.ID, 'no sessionID found!');
+    console.assert(data.session.ID, 'no sessionID received from websocket!');
     this.setState({
       username: data.username,
       sessionID: data.session.ID,
       session: data.session,
-      isAdmin: data.isAdmin,
     });
   };
 
@@ -230,6 +228,7 @@ export default class extends Component {
 
     return (
       <div className="App">
+        <h1>Scrum Session!</h1>
         <pre>{JSON.stringify(this.state, null, 2)}</pre>
         <AdminControlPanel
           isAdmin={this.state.isAdmin}
@@ -237,7 +236,6 @@ export default class extends Component {
           setSelectedIssue={this.setSelectedIssue}
         />
         <CopyBox link={this.getNonAdminSessionLink()} />
-        <h1>Scrum Session!!!</h1>
         <h2>Selected issue: {getSelectedIssue(this.state)} </h2>
         {this.state.issueTitle && <h2>{this.state.issueTitle}</h2>}
         <div>
