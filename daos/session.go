@@ -55,7 +55,7 @@ func CreateNewSession() (models.Session, error) {
 func UpdateSession(sessionID string, newData models.Session) error {
 	session, err := GetSession(sessionID)
 	if err != nil {
-		panic(err)
+		return errors.New("Cannot get Session")
 	}
 	log.Println(newData.AdminID, session.AdminID)
 	if newData.AdminID != session.AdminID {
@@ -124,7 +124,7 @@ func UpdateUserEstimation(e models.UserMessageEstimation) error {
 		return errors.New("Unable to create estimation. No issue with issue ID found")
 	}
 	if err != nil {
-		panic(err)
+		return errors.New("Cannot find issue")
 	}
 	issue.Estimations[e.Username] = e.EstimationValue
 	return updateIssue(e.SessionID, issue)
