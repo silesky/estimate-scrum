@@ -1,4 +1,4 @@
-import R from 'ramda';
+import * as R from 'ramda';
 export * from './fetch';
 export const toBool = bool => bool === 'true' || bool === true;
 export const fibonacci = num => {
@@ -7,9 +7,7 @@ export const fibonacci = num => {
 };
 export const getFibonaccis = num => {
   return R.pipe(
-    R.range(0),
+    R.range(1),
     R.map(fibonacci),
-    // remove leading 0
-    R.uniq
   )(num + 1);
 };

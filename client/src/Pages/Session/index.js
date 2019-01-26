@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
-import { getSession } from '../../utils';
-import * as Fetch from '../../utils/fetch';
+import { getSession, addEstimation, updateSession } from '../../utils';
 import { pathOr } from 'ramda';
-import AdminPanel from '../../Components/AdminPanel'
+import { AdminPanel, StoryPointsSelector } from '../../Components'
+
 const createWebSocketConnection = (onMessageCb, { id, adminID }) => {
   const WS_URL = `ws://localhost:3333/ws?id=${id}&adminID=${adminID}`;
   const socket = new WebSocket(WS_URL);
@@ -71,8 +71,6 @@ const CopyBox = ({ link }) => (
     <div className="copyBox">{link}</div>
   </span>
 );
-
-
 
 // {
 //   "session": {
@@ -160,14 +158,14 @@ export default class extends Component {
     );
 
     try {
-      const res = await Fetch.addEstimation(newEstimation);
+      const res = await addEstimation(newEstimation);
       console.log(res);
     } catch (err) {
       console.warn(err);
     }
   };
   submitIssueTitle = title => {
-    Fetch.updateSession({ ...this.state.session, issueTitle: title });
+    updateSession({ ...this.state.session, issueTitle: title });
   };
 
   setUser = currentUser => this.setState({ currentUser });
@@ -226,23 +224,16 @@ export default class extends Component {
             id="username"
           />
         </div>
-        <div>
-          <label htmlFor="estimation">Estimation</label>
-          <input
-            placeholder="my number"
-            onChange={event => this.setEstimate(event.target.value)}
-            type="number"
-            id="estimation"
-          />
-
-          <button id="submit" onClick={this.submitEstimation}>
-            Submit
-          </button>
-          <Issues
-            selectedIssue={getSelectedIssue(this.state)}
-            issues={getIssues(this.state)}
-          />
-        </div>
+        <StoryPointsSelector
+          onChange={event => this.setEstimate(event.target.value)}
+        />
+        <button id="submit" onClick={this.submitEstimation}>
+          Submit
+        </button>
+        <Issues
+          selectedIssue={getSelectedIssue(this.state)}
+          issues={getIssues(this.state)}
+        />
       </div>
     );
   }
