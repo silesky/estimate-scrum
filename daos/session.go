@@ -6,7 +6,6 @@ import (
 	"estimate/db"
 	"estimate/models"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -56,10 +55,6 @@ func UpdateSession(sessionID string, newData models.Session) error {
 	session, err := GetSession(sessionID)
 	if err != nil {
 		return errors.New("Cannot get Session")
-	}
-	log.Println(newData.AdminID, session.AdminID)
-	if newData.AdminID != session.AdminID {
-		return errors.New("Auth error")
 	}
 	mergo.Merge(&newData, session)
 	SaveSession(session.ID, newData)

@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { getSession, addEstimation, updateSession } from '../../utils';
 import { pathOr } from 'ramda';
-import { AdminPanel, StoryPointsSelector, Issue } from '../../Components'
+import { AdminPanel, StoryPointsSelector, Issue } from '../../Components';
 
 const createWebSocketConnection = (onMessageCb, { id, adminID }) => {
   const WS_URL = `ws://localhost:3333/ws?id=${id}&adminID=${adminID}`;
@@ -83,14 +83,11 @@ export default class extends Component {
       issues: [],
       selectedIssue: '',
     },
-    issues: [],
     currentUser: '',
     currentEstimate: null,
     isAdmin: false,
     error: false,
     // admin-only for setting
-    issueTitle: '',
-    selectedIssue: '',
   };
 
   wsSubscription = data => {
@@ -135,9 +132,31 @@ export default class extends Component {
       console.warn(err);
     }
   };
-  submitIssueTitle = title => {
-    updateSession({ ...this.state.session, issueTitle: title });
+
+  submitSessionUpdate = async () => {
+    const { id, adminID } = this.getParams();
+    try {
+      await updateSession(id, adminID, this.state.session)
+    } catch (err) {
+      console.error(err);
+    }
   };
+
+  setIssueTitle = issueTitle => {
+    const issues = this.state.session.issues.map(el => {
+      if (el.issueID === this.state.session.selectedIssue) {
+        return { ...el, issueTitle };
+      }
+      return el;
+    });
+    this.setState({
+      session: {
+        ...this.state.session,
+        issues,
+      },
+    });
+  };
+
 
   setUser = currentUser => this.setState({ currentUser });
   setEstimate = currentEstimate => {
@@ -148,7 +167,6 @@ export default class extends Component {
   };
   setAdminStatus = isAdmin => this.setState({ isAdmin });
   setError = bool => this.setState({ error: bool });
-  setIssueTitle = issueTitle => this.setState({ issueTitle });
   setSelectedIssue = issueID => this.setState({ selectedIssue: issueID });
   // http://localhost:3000/session?id=206f8d29-fa5a-4f0b-9051-6f7b4089967a
   async componentDidMount() {
@@ -183,6 +201,7 @@ export default class extends Component {
           isAdmin={this.state.isAdmin}
           setIssueTitle={this.setIssueTitle}
           setSelectedIssue={this.setSelectedIssue}
+          submitSessionUpdate={this.submitSessionUpdate}
         />
         <CopyBox link={this.getNonAdminSessionLink()} />
         <h2>Selected issue: {getSelectedIssue(this.state)} </h2>

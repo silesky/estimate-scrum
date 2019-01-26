@@ -9,7 +9,7 @@ const AdminControlPanelContainer = styled.div`
   border: 1px solid black;
 `;
 
-const AdminControlPanel = ({ isAdmin, setIssueTitle, setSelectedIssue }) => {
+const AdminControlPanel = ({ isAdmin, submitSessionUpdate, setIssueTitle, setSelectedIssue }) => {
   if (!isAdmin) return null;
   return (
     <AdminControlPanelContainer>
@@ -27,6 +27,7 @@ const AdminControlPanel = ({ isAdmin, setIssueTitle, setSelectedIssue }) => {
         onChange={e => setSelectedIssue(e.target.value)}
       />
       <button id="new-issue">New Issue</button>
+      <button onClick={() => submitSessionUpdate()}>SUBMIT</button>
     </AdminControlPanelContainer>
   );
 };
