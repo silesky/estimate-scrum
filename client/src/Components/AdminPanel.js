@@ -1,6 +1,11 @@
 import React from 'react'
 import StoryPointSelector from './StoryPointsSelector';
 
+/* AdminControlPanel is only visible if the user is an admin. It allows the user to do the following:
+- change current issue
+- change current issue title (meh)
+- change story points
+*/
 const AdminControlPanel = ({ isAdmin, setIssueTitle, setSelectedIssue }) => {
   if (!isAdmin) return null;
   return (
