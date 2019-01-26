@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { getSession } from '../../utils';
 import * as Fetch from '../../utils/fetch';
 import { pathOr } from 'ramda';
-import StoryPointSelector from '../../Components/StoryPointsSelector';
+import AdminPanel from '../../Components/AdminPanel'
 const createWebSocketConnection = (onMessageCb, { id, adminID }) => {
   const WS_URL = `ws://localhost:3333/ws?id=${id}&adminID=${adminID}`;
   const socket = new WebSocket(WS_URL);
@@ -72,27 +72,7 @@ const CopyBox = ({ link }) => (
   </span>
 );
 
-const AdminControlPanel = ({ isAdmin, setIssueTitle, setSelectedIssue }) => {
-  if (!isAdmin) return null;
-  return (
-    <div id="AdminControlPanel">
-      <h2>ADMIN IS AUTHORIZED</h2>
-      <label htmlFor="issueTitle">New Issue Title</label>
-      <input
-        type="text"
-        id="issueTitle"
-        onChange={e => setIssueTitle(e.target.value)}
-      />
-      <label htmlFor="selectedIssue">Selected Issue</label>
-      <input
-        type="text"
-        id="selectedIssue"
-        onChange={e => setSelectedIssue(e.target.value)}
-      />
-      <StoryPointSelector onChange={console.log} />
-    </div>
-  );
-};
+
 
 // {
 //   "session": {
@@ -228,9 +208,9 @@ export default class extends Component {
 
     return (
       <div className="App">
-        <h1>Scrum Session!</h1>
+        <h1>Scrum Session!!</h1>
         <pre>{JSON.stringify(this.state, null, 2)}</pre>
-        <AdminControlPanel
+        <AdminPanel
           isAdmin={this.state.isAdmin}
           setIssueTitle={this.setIssueTitle}
           setSelectedIssue={this.setSelectedIssue}
