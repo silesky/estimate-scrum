@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { getSession, addEstimation, updateSession } from '../../utils';
 import { pathOr } from 'ramda';
-import { AdminPanel, StoryPointsSelector } from '../../Components'
+import { AdminPanel, StoryPointsSelector, Issue } from '../../Components'
 
 const createWebSocketConnection = (onMessageCb, { id, adminID }) => {
   const WS_URL = `ws://localhost:3333/ws?id=${id}&adminID=${adminID}`;
@@ -15,35 +15,6 @@ const createWebSocketConnection = (onMessageCb, { id, adminID }) => {
     onMessageCb(data);
   });
   return socket;
-};
-
-const Estimate = ({ username, estimate }) => (
-  <h4>{`${username}: ${estimate}`}</h4>
-);
-
-const Issue = ({ issue, isSelected }) => {
-  const mapEstimations = estimations => {
-    return Object.keys(estimations).map(u => ({
-      username: u,
-      estimate: estimations[u],
-    }));
-  };
-
-  return (
-    <React.Fragment>
-      <h4 style={{ color: isSelected ? 'red' : 'black' }}>
-        IssueID: {issue.issueID}
-      </h4>
-      {mapEstimations(issue.estimations).map(estimate => (
-        <Estimate
-          username={estimate.username}
-          estimate={estimate.estimate}
-          key={estimate.username}
-        />
-      ))}
-      <hr />
-    </React.Fragment>
-  );
 };
 
 const Issues = ({ issues, selectedIssue }) => {

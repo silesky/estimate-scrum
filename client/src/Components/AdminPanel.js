@@ -1,14 +1,18 @@
-import React from 'react'
-
+import React from 'react';
+import styled from 'styled-components';
 /* AdminControlPanel is only visible if the user is an admin. It allows the user to do the following:
 - change current issue
 - change current issue title (meh)
 - change story points
 */
+const AdminControlPanelContainer = styled.div`
+  border: 1px solid black;
+`;
+
 const AdminControlPanel = ({ isAdmin, setIssueTitle, setSelectedIssue }) => {
   if (!isAdmin) return null;
   return (
-    <div id="AdminControlPanel">
+    <AdminControlPanelContainer>
       <h2>ADMIN IS AUTHORIZED</h2>
       <label htmlFor="issueTitle">New Issue Title</label>
       <input
@@ -22,8 +26,9 @@ const AdminControlPanel = ({ isAdmin, setIssueTitle, setSelectedIssue }) => {
         id="selectedIssue"
         onChange={e => setSelectedIssue(e.target.value)}
       />
-    </div>
+      <button id="new-issue">New Issue</button>
+    </AdminControlPanelContainer>
   );
 };
 
-export default AdminControlPanel
+export default AdminControlPanel;
