@@ -1,29 +1,27 @@
 
-Simple flow
+Flow
 1. user goes to www.foo.com and creates game and gets a sessionID.
 2. users open www.foo.com/sessionID
-3. all users can:
+3. user is taken to a splash page that tells them to enter their names
+4. all users can:
   - set available points
   - change issue
   - vote
 
-... basically, all users are admins. Why? Well, what if a user drops out?
 
-
-Complex Flow:
-1. admin goes to www.foo.com and creates game and gets a sessionID and authGUID.
-2. admin clicks 'new game' and is redirected to admin page of www.foo.com/sessionID?auth=authGUID.
-3. users open www.foo.com/sessionID
+Resuming a session
+1. user logs in, their userID is associated with a username.
+2. user can change their username, but not their UserID
 
 User Privileges:
 - vote
 - enter name
 
-Admin Privileges:
-- vote
-- enter name
-- change issue
-- set available points
-
+Additional Admin Privileges:
+- [ ] create new issue form (createIssue) (modal that requires *only* title) change issue (setSelectedIssue)
+- [x] change issue Title (setSelectedIssue)
+- [ ] set available points
+- [ ] delete users points
+- [ ] reset all points
 
 
