@@ -31,7 +31,5 @@ schema:
     ignored_paths:
     - .git
     - .realize
-    - client-estimate
-    - client.elm
     - client
     - vendor
