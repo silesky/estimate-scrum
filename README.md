@@ -1,4 +1,6 @@
-# DOCS
+A story point estimation tool using websockets (and written in go).
+
+## Develop
 
 ## Install dependencies:
 ```
