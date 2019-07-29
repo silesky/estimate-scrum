@@ -2,18 +2,18 @@ A story point estimation tool using websockets (and written in go).
 
 ## Develop
 
-## Install dependencies:
+### Install dependencies:
 ```
 go get -d ./...
 ```
 
-## Start
+### Start
 ```
 go install estimate/server
 estimate
 ```
 
-## Develop
+### Develop
 ```
 go get github.com/oxequa/realize
 realize start
